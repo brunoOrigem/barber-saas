@@ -1,10 +1,12 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { THEME } from '../theme';
 import { USER } from '../data/mock';
 import { useBookings } from '../contexts/BookingsContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { NextBookingCard } from '../components/NextBookingCard';
 import { ShortcutTile } from '../components/ShortcutTile';
 import { ShopInfoCard } from '../components/ShopInfoCard';
@@ -23,6 +25,7 @@ export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { upcoming } = useBookings();
+  const { activeShop } = useSettings();
 
   const goToNewBooking = () => navigation.navigate('SelectBarber');
 
@@ -39,10 +42,21 @@ export function HomeScreen() {
             Corte<Text style={styles.brandAccent}>App</Text>
           </Text>
         </View>
+        <TouchableOpacity
+          style={styles.shopChip}
+          onPress={() => navigation.navigate('Settings')}
+          accessibilityRole="button"
+          accessibilityLabel={`Barbearia ativa: ${activeShop.name}. Trocar barbearia`}
+        >
+          <Ionicons name="storefront-outline" size={THEME.FONT_SIZE.SM} color={THEME.COLORS.PRIMARY} />
+          <Text style={styles.shopChipText} numberOfLines={1}>
+            {activeShop.name}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.greeting}>
-        <Text style={styles.hello}>Olá, {USER.firstName} 👋</Text>
+        <Text style={styles.hello}>Olá, {USER.firstName}</Text>
         <Text style={styles.greetingSubtitle}>{getGreeting()}! Pronto para renovar o visual?</Text>
       </View>
 
@@ -71,13 +85,13 @@ export function HomeScreen() {
           icon="navigate-outline"
           title="Localização"
           subtitle="Veja como chegar"
-          onPress={openShopOnMaps}
+          onPress={() => openShopOnMaps(activeShop)}
         />
         <ShortcutTile
           icon="logo-whatsapp"
           title="Suporte"
           subtitle="Fale conosco pelo WhatsApp"
-          onPress={() => openShopWhatsApp()}
+          onPress={() => openShopWhatsApp(activeShop)}
         />
       </View>
 
@@ -118,6 +132,24 @@ const styles = StyleSheet.create({
   },
   brandAccent: {
     color: THEME.COLORS.PRIMARY,
+  },
+  shopChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: THEME.SPACING.XS,
+    flexShrink: 1,
+    maxWidth: '50%',
+    marginLeft: THEME.SPACING.SM,
+    paddingVertical: THEME.SPACING.XS,
+    paddingHorizontal: THEME.SPACING.SM,
+    borderRadius: THEME.BORDER_RADIUS.FULL,
+    backgroundColor: THEME.COLORS.CARD_BACKGROUND,
+  },
+  shopChipText: {
+    flexShrink: 1,
+    color: THEME.COLORS.TEXT_SECONDARY,
+    fontSize: THEME.FONT_SIZE.XS,
+    fontWeight: '600',
   },
   greeting: {
     marginTop: THEME.SPACING.LG,

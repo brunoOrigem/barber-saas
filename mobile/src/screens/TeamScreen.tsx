@@ -2,6 +2,7 @@ import React from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { BARBERS } from '../data/mock';
 
@@ -23,10 +24,13 @@ export function TeamScreen() {
           <View style={styles.info}>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.specialty}>{item.specialty}</Text>
-            <Text style={styles.rating}>
-              ★ {item.rating.toFixed(1)}
-              <Text style={styles.reviews}> · {item.reviews} avaliações</Text>
-            </Text>
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={THEME.FONT_SIZE.XS} color={THEME.COLORS.WARNING} />
+              <Text style={styles.rating}>
+                {item.rating.toFixed(1)}
+                <Text style={styles.reviews}> · {item.reviews} avaliações</Text>
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             style={styles.button}
@@ -78,11 +82,16 @@ const styles = StyleSheet.create({
     fontSize: THEME.FONT_SIZE.SM,
     marginTop: THEME.SPACING.XS / 2,
   },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: THEME.SPACING.XS,
+    marginTop: THEME.SPACING.XS,
+  },
   rating: {
     color: THEME.COLORS.WARNING,
     fontSize: THEME.FONT_SIZE.XS,
     fontWeight: 'bold',
-    marginTop: THEME.SPACING.XS,
   },
   reviews: {
     color: THEME.COLORS.TEXT_MUTED,

@@ -5,6 +5,8 @@ import { RootStackParamList } from './types';
 import { TabRoutes } from './TabRoutes';
 import { SelectBarberScreen } from '../screens/SelectBarberScreen';
 import { TeamScreen } from '../screens/TeamScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { LegalScreen } from '../screens/LegalScreen';
 
 export type { RootStackParamList, TabParamList } from './types';
 
@@ -29,6 +31,8 @@ export function AppRoutes() {
         options={{ title: 'Novo agendamento' }}
       />
       <Stack.Screen name="Team" component={TeamScreen} options={{ title: 'Nossa equipe' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Configurações' }} />
+      <Stack.Screen name="Legal" component={LegalScreen} />
     </Stack.Navigator>
   );
 }

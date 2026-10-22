@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { Barber } from '../data/mock';
 
@@ -25,7 +26,8 @@ export function BarberCard({ barber, selected, onPress }: Props) {
         {barber.name}
       </Text>
       <View style={styles.ratingRow}>
-        <Text style={styles.rating}>★ {barber.rating.toFixed(1)}</Text>
+        <Ionicons name="star" size={THEME.FONT_SIZE.XS} color={THEME.COLORS.WARNING} />
+        <Text style={styles.rating}> {barber.rating.toFixed(1)}</Text>
         <Text style={styles.reviews}> ({barber.reviews})</Text>
       </View>
       <Text style={styles.specialty} numberOfLines={2}>

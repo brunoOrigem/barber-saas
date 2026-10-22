@@ -1,21 +1,23 @@
-import React, { ComponentProps, ReactNode, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { USER } from '../data/mock';
 import { useBookings } from '../contexts/BookingsContext';
+import { useSettings } from '../contexts/SettingsContext';
+import { SettingsRow, SettingsSection } from '../components/SettingsList';
 import { openShopWhatsApp } from '../utils/contact';
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
-
 const AVATAR_SIZE = THEME.SPACING.XL * 2 + THEME.SPACING.MD;
+const HEADER_BUTTON_SIZE = THEME.SPACING.XL + THEME.SPACING.SM;
 
 export function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { history } = useBookings();
-  const [notifications, setNotifications] = useState(true);
-  const [reminders, setReminders] = useState(true);
+  const { activeShop } = useSettings();
 
   const completedCount = history.filter((b) => b.status === 'completed').length;
   const initials = USER.fullName
@@ -24,18 +26,23 @@ export function ProfileScreen() {
     .slice(0, 2)
     .join('');
 
-  const switchColors = {
-    trackColor: { false: THEME.COLORS.CARD_SELECTED, true: THEME.COLORS.PRIMARY },
-    thumbColor: THEME.COLORS.TEXT_PRIMARY,
-  };
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + THEME.SPACING.MD }]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>Perfil</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Perfil</Text>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('Settings')}
+          accessibilityRole="button"
+          accessibilityLabel="Configurações"
+        >
+          <Ionicons name="settings-outline" size={THEME.FONT_SIZE.LG} color={THEME.COLORS.TEXT_PRIMARY} />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
@@ -47,85 +54,28 @@ export function ProfileScreen() {
         </Text>
       </View>
 
-      <Text style={styles.sectionTitle}>Dados da conta</Text>
-      <View style={styles.group}>
-        <Row icon="person-outline" label="Nome" value={USER.fullName} />
-        <Row icon="mail-outline" label="E-mail" value={USER.email} />
-        <Row icon="call-outline" label="Telefone" value={USER.phone} last />
-      </View>
+      <SettingsSection title="Dados da conta">
+        <SettingsRow icon="person-outline" label="Nome" value={USER.fullName} />
+        <SettingsRow icon="mail-outline" label="E-mail" value={USER.email} />
+        <SettingsRow icon="call-outline" label="Telefone" value={USER.phone} last />
+      </SettingsSection>
 
-      <Text style={styles.sectionTitle}>Configurações</Text>
-      <View style={styles.group}>
-        <Row
-          icon="notifications-outline"
-          label="Notificações"
-          right={<Switch value={notifications} onValueChange={setNotifications} {...switchColors} />}
+      <SettingsSection title="Geral">
+        <SettingsRow
+          icon="settings-outline"
+          label="Configurações"
+          value="Lembretes, barbearia e privacidade"
+          onPress={() => navigation.navigate('Settings')}
         />
-        <Row
-          icon="alarm-outline"
-          label="Lembrete 1h antes do corte"
-          right={<Switch value={reminders} onValueChange={setReminders} {...switchColors} />}
+        <SettingsRow
+          icon="logo-whatsapp"
+          label="Falar com o suporte"
+          value={activeShop.name}
+          onPress={() => openShopWhatsApp(activeShop)}
           last
         />
-      </View>
-
-      <Text style={styles.sectionTitle}>Ajuda</Text>
-      <View style={styles.group}>
-        <Row icon="logo-whatsapp" label="Falar com o suporte" onPress={() => openShopWhatsApp()} />
-        <Row
-          icon="log-out-outline"
-          label="Sair da conta"
-          danger
-          last
-          onPress={() =>
-            Alert.alert('Sair da conta', 'Deseja mesmo sair?', [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Sair', style: 'destructive' },
-            ])
-          }
-        />
-      </View>
-
-      <Text style={styles.version}>CorteApp · versão 1.0.0</Text>
+      </SettingsSection>
     </ScrollView>
-  );
-}
-
-type RowProps = {
-  icon: IconName;
-  label: string;
-  value?: string;
-  right?: ReactNode;
-  onPress?: () => void;
-  danger?: boolean;
-  last?: boolean;
-};
-
-function Row({ icon, label, value, right, onPress, danger, last }: RowProps) {
-  const content = (
-    <View style={[styles.row, !last && styles.rowDivider]}>
-      <Ionicons
-        name={icon}
-        size={THEME.FONT_SIZE.LG}
-        color={danger ? THEME.COLORS.DANGER : THEME.COLORS.PRIMARY}
-      />
-      <View style={styles.rowText}>
-        <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
-        {value && <Text style={styles.rowValue}>{value}</Text>}
-      </View>
-      {right ??
-        (onPress && (
-          <Ionicons name="chevron-forward" size={THEME.FONT_SIZE.MD} color={THEME.COLORS.TEXT_MUTED} />
-        ))}
-    </View>
-  );
-
-  return onPress ? (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} accessibilityRole="button">
-      {content}
-    </TouchableOpacity>
-  ) : (
-    content
   );
 }
 
@@ -138,11 +88,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.SPACING.MD,
     paddingBottom: THEME.SPACING.LG,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: THEME.SPACING.MD,
+  },
   title: {
     color: THEME.COLORS.TEXT_PRIMARY,
     fontSize: THEME.FONT_SIZE.XL,
     fontWeight: 'bold',
-    marginBottom: THEME.SPACING.MD,
+  },
+  settingsButton: {
+    width: HEADER_BUTTON_SIZE,
+    height: HEADER_BUTTON_SIZE,
+    borderRadius: THEME.BORDER_RADIUS.MD,
+    backgroundColor: THEME.COLORS.CARD_BACKGROUND,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileCard: {
     alignItems: 'center',
@@ -175,51 +138,5 @@ const styles = StyleSheet.create({
     color: THEME.COLORS.TEXT_SECONDARY,
     fontSize: THEME.FONT_SIZE.SM,
     marginTop: THEME.SPACING.XS,
-  },
-  sectionTitle: {
-    color: THEME.COLORS.TEXT_MUTED,
-    fontSize: THEME.FONT_SIZE.XS,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginTop: THEME.SPACING.LG,
-    marginBottom: THEME.SPACING.SM,
-  },
-  group: {
-    backgroundColor: THEME.COLORS.CARD_BACKGROUND,
-    borderRadius: THEME.BORDER_RADIUS.LG,
-    paddingHorizontal: THEME.SPACING.MD,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: THEME.SPACING.MD,
-    paddingVertical: THEME.SPACING.MD,
-  },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.COLORS.BORDER,
-  },
-  rowText: {
-    flex: 1,
-  },
-  rowLabel: {
-    color: THEME.COLORS.TEXT_PRIMARY,
-    fontSize: THEME.FONT_SIZE.SM,
-    fontWeight: '600',
-  },
-  rowLabelDanger: {
-    color: THEME.COLORS.DANGER,
-  },
-  rowValue: {
-    color: THEME.COLORS.TEXT_SECONDARY,
-    fontSize: THEME.FONT_SIZE.XS,
-    marginTop: THEME.SPACING.XS / 2,
-  },
-  version: {
-    color: THEME.COLORS.TEXT_MUTED,
-    fontSize: THEME.FONT_SIZE.XS,
-    textAlign: 'center',
-    marginTop: THEME.SPACING.LG,
   },
 });

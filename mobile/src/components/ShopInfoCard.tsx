@@ -2,11 +2,12 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
-import { SHOP } from '../data/mock';
+import { useSettings } from '../contexts/SettingsContext';
 import { getWeeklyHours, isShopOpen } from '../utils/booking';
 import { openShopOnMaps } from '../utils/contact';
 
 export function ShopInfoCard() {
+  const { activeShop } = useSettings();
   const open = isShopOpen();
   const rows = getWeeklyHours();
 
@@ -28,11 +29,15 @@ export function ShopInfoCard() {
         </View>
       ))}
 
-      <TouchableOpacity style={styles.address} onPress={openShopOnMaps} accessibilityRole="link">
+      <TouchableOpacity
+        style={styles.address}
+        onPress={() => openShopOnMaps(activeShop)}
+        accessibilityRole="link"
+      >
         <Ionicons name="location-outline" size={THEME.FONT_SIZE.LG} color={THEME.COLORS.PRIMARY} />
         <View style={styles.addressText}>
-          <Text style={styles.street}>{SHOP.address}</Text>
-          <Text style={styles.city}>{SHOP.city}</Text>
+          <Text style={styles.street}>{activeShop.address}</Text>
+          <Text style={styles.city}>{activeShop.city}</Text>
         </View>
         <Ionicons name="chevron-forward" size={THEME.FONT_SIZE.MD} color={THEME.COLORS.TEXT_MUTED} />
       </TouchableOpacity>

@@ -1,5 +1,5 @@
 import React, { ComponentProps } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
@@ -28,13 +28,11 @@ export function TabRoutes() {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.label,
         tabBarIcon: ({ focused, color }) => (
-          <View style={[styles.iconPill, focused && styles.iconPillActive]}>
-            <Ionicons
-              name={focused ? ICONS[route.name].active : ICONS[route.name].inactive}
-              size={THEME.FONT_SIZE.LG}
-              color={color}
-            />
-          </View>
+          <Ionicons
+            name={focused ? ICONS[route.name].active : ICONS[route.name].inactive}
+            size={THEME.FONT_SIZE.XL}
+            color={color}
+          />
         ),
       })}
     >
@@ -58,13 +56,5 @@ const styles = StyleSheet.create({
   label: {
     fontSize: THEME.FONT_SIZE.XS,
     fontWeight: '600',
-  },
-  iconPill: {
-    paddingHorizontal: THEME.SPACING.MD,
-    paddingVertical: THEME.SPACING.XS / 2,
-    borderRadius: THEME.BORDER_RADIUS.FULL,
-  },
-  iconPillActive: {
-    backgroundColor: THEME.COLORS.PRIMARY_SOFT,
   },
 });

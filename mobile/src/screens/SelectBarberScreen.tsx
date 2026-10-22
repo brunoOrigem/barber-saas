@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { THEME } from '../theme';
 import { BARBERS, SERVICES, getServiceById } from '../data/mock';
@@ -89,7 +90,7 @@ export function SelectBarberScreen({ route, navigation }: Props) {
 
     setSummaryVisible(false);
     Alert.alert(
-      'Agendamento confirmado! ✅',
+      'Agendamento confirmado',
       `${barber.name} te espera ${day.label.toLowerCase()} (${day.sublabel}) às ${time}.`,
       [{ text: 'OK', onPress: () => navigation.popTo('MainTabs', { screen: 'Bookings' }) }],
     );
@@ -133,7 +134,10 @@ export function SelectBarberScreen({ route, navigation }: Props) {
             />
           ))}
           <View style={styles.totals}>
-            <Text style={styles.totalsText}>⏱️ {formatDuration(totalDuration)}</Text>
+            <View style={styles.totalsDuration}>
+              <Ionicons name="time-outline" size={THEME.FONT_SIZE.SM} color={THEME.COLORS.TEXT_SECONDARY} />
+              <Text style={styles.totalsText}>{formatDuration(totalDuration)}</Text>
+            </View>
             <Text style={styles.totalsPrice}>{formatPrice(totalPrice)}</Text>
           </View>
         </View>
@@ -239,6 +243,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: THEME.SPACING.SM,
     paddingHorizontal: THEME.SPACING.XS,
+  },
+  totalsDuration: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: THEME.SPACING.XS,
   },
   totalsText: {
     color: THEME.COLORS.TEXT_SECONDARY,

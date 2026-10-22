@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { Service } from '../data/mock';
 import { formatDuration, formatPrice } from '../utils/booking';
@@ -23,13 +24,24 @@ export function ServiceCard({ service, selected, onPress, showCheckbox }: Props)
     >
       {showCheckbox && (
         <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-          {selected && <Text style={styles.checkmark}>✓</Text>}
+          {selected && (
+            <Ionicons name="checkmark" size={THEME.FONT_SIZE.SM} color={THEME.COLORS.TEXT_PRIMARY} />
+          )}
         </View>
       )}
-      <Text style={styles.icon}>{service.icon}</Text>
+      <View style={[styles.iconBox, selected && styles.iconBoxSelected]}>
+        <MaterialCommunityIcons
+          name={service.icon}
+          size={THEME.FONT_SIZE.XL}
+          color={selected ? THEME.COLORS.TEXT_PRIMARY : THEME.COLORS.PRIMARY}
+        />
+      </View>
       <View style={styles.info}>
         <Text style={styles.name}>{service.name}</Text>
-        <Text style={styles.duration}>⏱️ {formatDuration(service.durationMin)}</Text>
+        <View style={styles.durationRow}>
+          <Ionicons name="time-outline" size={THEME.FONT_SIZE.SM} color={THEME.COLORS.TEXT_MUTED} />
+          <Text style={styles.duration}>{formatDuration(service.durationMin)}</Text>
+        </View>
       </View>
       <Text style={styles.price}>{formatPrice(service.price)}</Text>
     </TouchableOpacity>
@@ -65,14 +77,17 @@ const styles = StyleSheet.create({
     borderColor: THEME.COLORS.PRIMARY,
     backgroundColor: THEME.COLORS.PRIMARY,
   },
-  checkmark: {
-    color: THEME.COLORS.TEXT_PRIMARY,
-    fontSize: THEME.FONT_SIZE.SM,
-    fontWeight: 'bold',
-  },
-  icon: {
-    fontSize: THEME.FONT_SIZE.XL,
+  iconBox: {
+    width: THEME.SPACING.XL + THEME.SPACING.SM,
+    height: THEME.SPACING.XL + THEME.SPACING.SM,
+    borderRadius: THEME.BORDER_RADIUS.MD,
+    backgroundColor: THEME.COLORS.PRIMARY_SOFT,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: THEME.SPACING.MD,
+  },
+  iconBoxSelected: {
+    backgroundColor: THEME.COLORS.PRIMARY,
   },
   info: {
     flex: 1,
@@ -82,10 +97,15 @@ const styles = StyleSheet.create({
     fontSize: THEME.FONT_SIZE.MD,
     fontWeight: '600',
   },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: THEME.SPACING.XS,
+    marginTop: THEME.SPACING.XS,
+  },
   duration: {
     color: THEME.COLORS.TEXT_MUTED,
     fontSize: THEME.FONT_SIZE.SM,
-    marginTop: THEME.SPACING.XS,
   },
   price: {
     color: THEME.COLORS.PRIMARY,

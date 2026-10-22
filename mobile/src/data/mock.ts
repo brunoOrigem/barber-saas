@@ -1,9 +1,14 @@
+import { ComponentProps } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+export type ServiceIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
+
 export type Service = {
   id: string;
   name: string;
   price: number;
   durationMin: number;
-  icon: string;
+  icon: ServiceIconName;
   /** Serviços já incluídos neste (ex: o combo inclui corte e barba). */
   includes?: string[];
 };
@@ -18,17 +23,17 @@ export type Barber = {
 };
 
 export const SERVICES: Service[] = [
-  { id: 'corte', name: 'Corte de Cabelo', price: 45, durationMin: 45, icon: '✂️' },
-  { id: 'barba', name: 'Barba Completa', price: 35, durationMin: 30, icon: '🪒' },
+  { id: 'corte', name: 'Corte de Cabelo', price: 45, durationMin: 45, icon: 'content-cut' },
+  { id: 'barba', name: 'Barba Completa', price: 35, durationMin: 30, icon: 'razor-double-edge' },
   {
     id: 'combo',
     name: 'Combo Cabelo + Barba',
     price: 70,
     durationMin: 75,
-    icon: '💈',
+    icon: 'face-man-shimmer',
     includes: ['corte', 'barba'],
   },
-  { id: 'sobrancelha', name: 'Sobrancelha', price: 15, durationMin: 15, icon: '✨' },
+  { id: 'sobrancelha', name: 'Sobrancelha', price: 15, durationMin: 15, icon: 'eye-outline' },
 ];
 
 export const BARBERS: Barber[] = [
@@ -79,12 +84,38 @@ export const BUSINESS_HOURS: BusinessHours[] = [
   { open: 9, close: 17 },
 ];
 
-export const SHOP = {
-  name: 'CorteApp Barbearia',
-  address: 'Rua das Tesouras, 123 – Centro',
-  city: 'São Paulo – SP',
-  whatsapp: '5511999999999',
+export type Shop = {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  whatsapp: string;
 };
+
+// Barbearias parceiras da plataforma (SaaS). O cliente escolhe uma ativa.
+export const PARTNER_SHOPS: Shop[] = [
+  {
+    id: 'danillo',
+    name: 'Danillo Andreoli Barbearia',
+    address: 'Rua das Tesouras, 123 – Centro',
+    city: 'São Paulo – SP',
+    whatsapp: '5511999999999',
+  },
+  {
+    id: 'navalha',
+    name: 'Navalha de Ouro',
+    address: 'Av. Paulista, 900 – Bela Vista',
+    city: 'São Paulo – SP',
+    whatsapp: '5511988888888',
+  },
+  {
+    id: 'classic',
+    name: 'Classic Barber Club',
+    address: 'Rua Augusta, 1500 – Consolação',
+    city: 'São Paulo – SP',
+    whatsapp: '5511977777777',
+  },
+];
 
 export const USER = {
   firstName: 'Bruno',
@@ -92,6 +123,8 @@ export const USER = {
   email: 'bruno@exemplo.com',
   phone: '(11) 98888-7777',
 };
+
+export const APP_VERSION = '1.0.0';
 
 export const SLOT_INTERVAL_MIN = 30;
 export const BOOKING_DAYS_AHEAD = 7;

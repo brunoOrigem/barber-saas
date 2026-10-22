@@ -10,6 +10,8 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList>;
   SelectBarber: { serviceIds?: string[]; barberId?: string } | undefined;
   Team: undefined;
+  Settings: undefined;
+  Legal: { type: 'terms' | 'privacy' };
 };
 
 declare global {
