@@ -6,6 +6,7 @@ export const THEME = {
     
     PRIMARY: '#00B37E',      // Verde Esmeralda (Botões de Ação)
     PRIMARY_DISABLED: '#123D31',
+    PRIMARY_SOFT: '#123D31',  // Fundo de destaques e indicador ativo
     
     TEXT_PRIMARY: '#FFFFFF',
     TEXT_SECONDARY: '#A8A8B3',
@@ -14,6 +15,7 @@ export const THEME = {
     BORDER: '#29292E',
     SUCCESS: '#00B37E',
     WARNING: '#FBA94C',
+    DANGER: '#F75A68',
 
     OVERLAY: 'rgba(0, 0, 0, 0.6)', // Fundo de modais
   },

@@ -1,39 +1,34 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { THEME } from '../theme';
-import { HomeScreen } from '../screens/HomeScreen';
+import { RootStackParamList } from './types';
+import { TabRoutes } from './TabRoutes';
 import { SelectBarberScreen } from '../screens/SelectBarberScreen';
+import { TeamScreen } from '../screens/TeamScreen';
 
-export type RootStackParamList = {
-  Home: undefined;
-  SelectBarber: { serviceId: string };
-};
-
-declare global {
-  namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList {}
-  }
-}
+export type { RootStackParamList, TabParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppRoutes() {
   return (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName="MainTabs"
       screenOptions={{
         headerStyle: { backgroundColor: THEME.COLORS.BACKGROUND },
         headerTintColor: THEME.COLORS.TEXT_PRIMARY,
         headerShadowVisible: false,
+        headerBackTitle: 'Voltar',
         contentStyle: { backgroundColor: THEME.COLORS.BACKGROUND },
       }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MainTabs" component={TabRoutes} options={{ headerShown: false }} />
       <Stack.Screen
         name="SelectBarber"
         component={SelectBarberScreen}
-        options={{ title: 'Agendamento', headerBackTitle: 'Voltar' }}
+        options={{ title: 'Novo agendamento' }}
       />
+      <Stack.Screen name="Team" component={TeamScreen} options={{ title: 'Nossa equipe' }} />
     </Stack.Navigator>
   );
 }

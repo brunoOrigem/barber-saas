@@ -4,6 +4,7 @@ import { DarkTheme, NavigationContainer, Theme } from '@react-navigation/native'
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { THEME } from './src/theme';
 import { AppRoutes } from './src/routes';
+import { BookingsProvider } from './src/contexts/BookingsContext';
 
 const navigationTheme: Theme = {
   ...DarkTheme,
@@ -20,10 +21,12 @@ const navigationTheme: Theme = {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
-        <StatusBar barStyle="light-content" backgroundColor={THEME.COLORS.BACKGROUND} />
-        <AppRoutes />
-      </NavigationContainer>
+      <BookingsProvider>
+        <NavigationContainer theme={navigationTheme}>
+          <StatusBar barStyle="light-content" backgroundColor={THEME.COLORS.BACKGROUND} />
+          <AppRoutes />
+        </NavigationContainer>
+      </BookingsProvider>
     </SafeAreaProvider>
   );
 }

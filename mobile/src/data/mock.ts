@@ -66,11 +66,40 @@ export const BARBERS: Barber[] = [
   },
 ];
 
-export const OPENING_HOUR = 9;
-export const CLOSING_HOUR = 19;
+export type BusinessHours = { open: number; close: number } | null;
+
+/** Horário de funcionamento indexado por `Date.getDay()` (0 = domingo), em horas. */
+export const BUSINESS_HOURS: BusinessHours[] = [
+  null,
+  { open: 9, close: 19 },
+  { open: 9, close: 19 },
+  { open: 9, close: 19 },
+  { open: 9, close: 19 },
+  { open: 9, close: 19 },
+  { open: 9, close: 17 },
+];
+
+export const SHOP = {
+  name: 'CorteApp Barbearia',
+  address: 'Rua das Tesouras, 123 – Centro',
+  city: 'São Paulo – SP',
+  whatsapp: '5511999999999',
+};
+
+export const USER = {
+  firstName: 'Bruno',
+  fullName: 'Bruno Noronha',
+  email: 'bruno@exemplo.com',
+  phone: '(11) 98888-7777',
+};
+
 export const SLOT_INTERVAL_MIN = 30;
 export const BOOKING_DAYS_AHEAD = 7;
 
 export function getServiceById(id: string) {
   return SERVICES.find((service) => service.id === id);
+}
+
+export function getBarberById(id: string) {
+  return BARBERS.find((barber) => barber.id === id);
 }

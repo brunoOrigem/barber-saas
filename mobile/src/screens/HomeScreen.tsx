@@ -1,48 +1,89 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React from 'react';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { THEME } from '../theme';
-import { SERVICES } from '../data/mock';
-import { RootStackParamList } from '../routes';
-import { ServiceCard } from '../components/ServiceCard';
-import { PrimaryButton } from '../components/PrimaryButton';
+import { USER } from '../data/mock';
+import { useBookings } from '../contexts/BookingsContext';
+import { NextBookingCard } from '../components/NextBookingCard';
+import { ShortcutTile } from '../components/ShortcutTile';
+import { ShopInfoCard } from '../components/ShopInfoCard';
+import { openShopOnMaps, openShopWhatsApp } from '../utils/contact';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+const LOGO_SIZE = THEME.SPACING.XL + THEME.SPACING.MD;
 
-export function HomeScreen({ navigation }: Props) {
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+function getGreeting(now = new Date()) {
+  const hour = now.getHours();
+  if (hour < 12) return 'Bom dia';
+  if (hour < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+export function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const { upcoming } = useBookings();
+
+  const goToNewBooking = () => navigation.navigate('SelectBarber');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + THEME.SPACING.MD }]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
-        <Text style={styles.welcome}>Bem-vindo à</Text>
-        <Text style={styles.shopName}>Barbearia VIP 💈</Text>
-        <Text style={styles.subtitle}>Escolha o serviço desejado para agendar:</Text>
+        <View style={styles.brand}>
+          <Image source={require('../../assets/logo.png')} style={styles.logo} />
+          <Text style={styles.brandName}>
+            Corte<Text style={styles.brandAccent}>App</Text>
+          </Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.list}>
-        {SERVICES.map((service) => (
-          <ServiceCard
-            key={service.id}
-            service={service}
-            selected={selectedServiceId === service.id}
-            onPress={() => setSelectedServiceId(service.id)}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.greeting}>
+        <Text style={styles.hello}>Olá, {USER.firstName} 👋</Text>
+        <Text style={styles.greetingSubtitle}>{getGreeting()}! Pronto para renovar o visual?</Text>
+      </View>
 
-      <SafeAreaView style={styles.footer} edges={['bottom']}>
-        <PrimaryButton
-          title={selectedServiceId ? 'Continuar Agendamento' : 'Selecione um serviço'}
-          disabled={!selectedServiceId}
-          onPress={() =>
-            selectedServiceId &&
-            navigation.navigate('SelectBarber', { serviceId: selectedServiceId })
-          }
+      <NextBookingCard
+        booking={upcoming[0]}
+        onPressDetails={() => navigation.navigate('MainTabs', { screen: 'Bookings' })}
+        onPressSchedule={goToNewBooking}
+      />
+
+      <Text style={styles.sectionTitle}>Acesso rápido</Text>
+      <View style={styles.grid}>
+        <ShortcutTile
+          icon="add-circle-outline"
+          title="Novo agendamento"
+          subtitle="Escolha serviço, barbeiro e horário"
+          onPress={goToNewBooking}
+          highlighted
         />
-      </SafeAreaView>
-    </SafeAreaView>
+        <ShortcutTile
+          icon="people-outline"
+          title="Equipe"
+          subtitle="Profissionais e especialidades"
+          onPress={() => navigation.navigate('Team')}
+        />
+        <ShortcutTile
+          icon="navigate-outline"
+          title="Localização"
+          subtitle="Veja como chegar"
+          onPress={openShopOnMaps}
+        />
+        <ShortcutTile
+          icon="logo-whatsapp"
+          title="Suporte"
+          subtitle="Fale conosco pelo WhatsApp"
+          onPress={() => openShopWhatsApp()}
+        />
+      </View>
+
+      <Text style={styles.sectionTitle}>Informações</Text>
+      <ShopInfoCard />
+    </ScrollView>
   );
 }
 
@@ -51,33 +92,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: THEME.COLORS.BACKGROUND,
   },
+  content: {
+    paddingHorizontal: THEME.SPACING.MD,
+    paddingBottom: THEME.SPACING.LG,
+  },
   header: {
-    paddingHorizontal: THEME.SPACING.MD,
-    paddingTop: THEME.SPACING.XL,
-    paddingBottom: THEME.SPACING.MD,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  welcome: {
-    color: THEME.COLORS.TEXT_SECONDARY,
-    fontSize: THEME.FONT_SIZE.MD,
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: THEME.SPACING.SM,
   },
-  shopName: {
+  logo: {
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+    borderRadius: THEME.BORDER_RADIUS.MD,
+  },
+  brandName: {
     color: THEME.COLORS.TEXT_PRIMARY,
-    fontSize: THEME.FONT_SIZE.XXL,
+    fontSize: THEME.FONT_SIZE.LG,
     fontWeight: 'bold',
-    marginVertical: THEME.SPACING.XS,
   },
-  subtitle: {
-    color: THEME.COLORS.TEXT_MUTED,
+  brandAccent: {
+    color: THEME.COLORS.PRIMARY,
+  },
+  greeting: {
+    marginTop: THEME.SPACING.LG,
+    marginBottom: THEME.SPACING.MD,
+  },
+  hello: {
+    color: THEME.COLORS.TEXT_PRIMARY,
+    fontSize: THEME.FONT_SIZE.XL,
+    fontWeight: 'bold',
+  },
+  greetingSubtitle: {
+    color: THEME.COLORS.TEXT_SECONDARY,
     fontSize: THEME.FONT_SIZE.SM,
+    marginTop: THEME.SPACING.XS,
   },
-  list: {
-    paddingHorizontal: THEME.SPACING.MD,
-    paddingBottom: THEME.SPACING.MD,
+  sectionTitle: {
+    color: THEME.COLORS.TEXT_PRIMARY,
+    fontSize: THEME.FONT_SIZE.MD,
+    fontWeight: 'bold',
+    marginTop: THEME.SPACING.LG,
+    marginBottom: THEME.SPACING.SM,
   },
-  footer: {
-    padding: THEME.SPACING.MD,
-    backgroundColor: THEME.COLORS.CARD_BACKGROUND,
-    borderTopWidth: 1,
-    borderTopColor: THEME.COLORS.BORDER,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: THEME.SPACING.SM,
   },
 });

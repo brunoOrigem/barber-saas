@@ -10,23 +10,30 @@ import { ServiceCard } from '../components/ServiceCard';
 import { SelectableChip } from '../components/SelectableChip';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { BookingSummaryModal } from '../components/BookingSummaryModal';
+import { useBookings } from '../contexts/BookingsContext';
 import {
   formatDuration,
   formatPrice,
   getAvailableTimes,
   getBookingDays,
+  minutesOfDay,
+  toDayKey,
 } from '../utils/booking';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SelectBarber'>;
 
 export function SelectBarberScreen({ route, navigation }: Props) {
   const days = useMemo(() => getBookingDays(), []);
+  const { upcoming, addBooking } = useBookings();
 
-  const [barberId, setBarberId] = useState<string | null>(null);
+  const [barberId, setBarberId] = useState<string | null>(() => {
+    const id = route.params?.barberId;
+    return id && BARBERS.some((b) => b.id === id) ? id : null;
+  });
   const [serviceIds, setServiceIds] = useState<string[]>(() =>
-    getServiceById(route.params.serviceId) ? [route.params.serviceId] : [],
+    (route.params?.serviceIds ?? []).filter((id) => getServiceById(id)),
   );
-  const [dayKey, setDayKey] = useState(days[0].key);
+  const [dayKey, setDayKey] = useState(() => (days.find((d) => d.hours) ?? days[0]).key);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [summaryVisible, setSummaryVisible] = useState(false);
 
@@ -37,10 +44,14 @@ export function SelectBarberScreen({ route, navigation }: Props) {
   const barber = BARBERS.find((b) => b.id === barberId) ?? null;
   const day = days.find((d) => d.key === dayKey) ?? days[0];
 
-  const availableTimes = useMemo(
-    () => (barberId ? getAvailableTimes(barberId, day, totalDuration) : []),
-    [barberId, day, totalDuration],
-  );
+  const availableTimes = useMemo(() => {
+    if (!barberId) return [];
+    // Horários que o cliente já reservou com este barbeiro neste dia ficam bloqueados.
+    const taken = upcoming
+      .filter((b) => b.barberId === barberId && toDayKey(new Date(b.startsAt)) === day.key)
+      .map((b) => ({ startMin: minutesOfDay(new Date(b.startsAt)), durationMin: b.totalDuration }));
+    return getAvailableTimes(barberId, day, totalDuration, taken);
+  }, [barberId, day, totalDuration, upcoming]);
 
   // Se o barbeiro, dia ou duração mudarem, um horário que deixou de existir é descartado.
   const time = selectedTime && availableTimes.includes(selectedTime) ? selectedTime : null;
@@ -62,11 +73,25 @@ export function SelectBarberScreen({ route, navigation }: Props) {
   }
 
   function handleConfirm() {
+    if (!barber || !time) return;
+
+    const [hours, minutes] = time.split(':').map(Number);
+    const startsAt = new Date(day.date);
+    startsAt.setHours(hours, minutes, 0, 0);
+
+    addBooking({
+      barberId: barber.id,
+      serviceIds: selectedServices.map((s) => s.id),
+      startsAt: startsAt.getTime(),
+      totalPrice,
+      totalDuration,
+    });
+
     setSummaryVisible(false);
     Alert.alert(
       'Agendamento confirmado! ✅',
-      `${barber?.name} espera por si ${day.label.toLowerCase()} (${day.sublabel}) às ${time}.`,
-      [{ text: 'OK', onPress: () => navigation.popToTop() }],
+      `${barber.name} te espera ${day.label.toLowerCase()} (${day.sublabel}) às ${time}.`,
+      [{ text: 'OK', onPress: () => navigation.popTo('MainTabs', { screen: 'Bookings' }) }],
     );
   }
 
@@ -123,7 +148,7 @@ export function SelectBarberScreen({ route, navigation }: Props) {
             <SelectableChip
               key={d.key}
               label={d.label}
-              sublabel={d.sublabel}
+              sublabel={d.hours ? d.sublabel : 'Fechado'}
               selected={d.key === dayKey}
               onPress={() => setDayKey(d.key)}
               style={styles.dayChip}
@@ -137,6 +162,8 @@ export function SelectBarberScreen({ route, navigation }: Props) {
             <Text style={styles.emptyText}>Escolha um profissional para ver os horários.</Text>
           ) : selectedServices.length === 0 ? (
             <Text style={styles.emptyText}>Selecione ao menos um serviço.</Text>
+          ) : !day.hours ? (
+            <Text style={styles.emptyText}>A barbearia está fechada neste dia.</Text>
           ) : availableTimes.length === 0 ? (
             <Text style={styles.emptyText}>Sem horários disponíveis neste dia.</Text>
           ) : (
