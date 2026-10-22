@@ -2,6 +2,7 @@ import {
   BOOKING_DAYS_AHEAD,
   BUSINESS_HOURS,
   BusinessHours,
+  DEMO_CLIENT_NAMES,
   SLOT_INTERVAL_MIN,
   getServiceById,
 } from '../data/mock';
@@ -18,6 +19,29 @@ export type BookingDay = {
 export type TakenRange = { startMin: number; durationMin: number };
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const WEEKDAYS_LONG = [
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+];
+const MONTHS = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export function formatPrice(value: number) {
@@ -59,6 +83,21 @@ export function formatRelativeDay(date: Date, now = new Date()) {
   if (diff === 0) return 'Hoje';
   if (diff === 1) return 'Amanhã';
   return `${WEEKDAYS[date.getDay()]}, ${formatDayMonth(date)}`;
+}
+
+/** "Quinta-feira, 22 de outubro". */
+export function formatLongDate(date: Date) {
+  return `${WEEKDAYS_LONG[date.getDay()]}, ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
+}
+
+/** "Hoje", "Ontem" ou "Há 3 dias". */
+export function formatTimeAgo(timestamp: number, now = new Date()) {
+  const diff = Math.round(
+    (startOfDay(now).getTime() - startOfDay(new Date(timestamp)).getTime()) / MS_PER_DAY,
+  );
+  if (diff <= 0) return 'Hoje';
+  if (diff === 1) return 'Ontem';
+  return `Há ${diff} dias`;
 }
 
 export function describeServices(serviceIds: string[]) {
@@ -133,7 +172,71 @@ export function getAvailableTimes(
   return times;
 }
 
-export type WeeklyHoursRow = { label: string; value: string; isToday: boolean };
+export type BarberAppointment = {
+  id: string;
+  clientName: string;
+  serviceIds: string[];
+  /** Início em minutos desde a meia-noite. */
+  startMin: number;
+  durationMin: number;
+  price: number;
+  /** Reserva feita pelo próprio usuário no modo cliente. */
+  fromApp?: boolean;
+};
+
+// Serviços que preenchem exatamente 1, 2 ou 3 blocos de 30 min.
+const SERVICES_BY_BLOCKS: Record<number, string[]> = {
+  1: ['barba'],
+  2: ['corte', 'sobrancelha'],
+  3: ['combo', 'sobrancelha'],
+};
+const MAX_BLOCKS_PER_APPOINTMENT = 3;
+
+/**
+ * Agenda simulada do barbeiro no dia (mock). Usa os mesmos blocos ocupados
+ * que o cliente vê como indisponíveis, mantendo as duas visões consistentes.
+ */
+export function getSimulatedAppointments(barberId: string, date: Date): BarberAppointment[] {
+  const hours = BUSINESS_HOURS[date.getDay()];
+  if (!hours) return [];
+
+  const dayKey = toDayKey(date);
+  const opening = hours.open * 60;
+  const closing = hours.close * 60;
+  const appointments: BarberAppointment[] = [];
+
+  const push = (startMin: number, blocks: number) => {
+    const serviceIds = SERVICES_BY_BLOCKS[blocks];
+    appointments.push({
+      id: `${barberId}-${dayKey}-${startMin}`,
+      clientName: DEMO_CLIENT_NAMES[(startMin / SLOT_INTERVAL_MIN) % DEMO_CLIENT_NAMES.length],
+      serviceIds,
+      startMin,
+      durationMin: blocks * SLOT_INTERVAL_MIN,
+      price: serviceIds.reduce((sum, id) => sum + (getServiceById(id)?.price ?? 0), 0),
+    });
+  };
+
+  let runStart: number | null = null;
+  for (let block = opening; block <= closing; block += SLOT_INTERVAL_MIN) {
+    const busy = block < closing && isBlockBusy(barberId, dayKey, block);
+    if (busy) {
+      runStart ??= block;
+      const blocks = (block + SLOT_INTERVAL_MIN - runStart) / SLOT_INTERVAL_MIN;
+      if (blocks === MAX_BLOCKS_PER_APPOINTMENT) {
+        push(runStart, blocks);
+        runStart = null;
+      }
+    } else if (runStart !== null) {
+      push(runStart, (block - runStart) / SLOT_INTERVAL_MIN);
+      runStart = null;
+    }
+  }
+
+  return appointments;
+}
+
+export type WeeklyHoursRow ={ label: string; value: string; isToday: boolean };
 
 /** Agrupa dias consecutivos com o mesmo horário, começando na segunda-feira. */
 export function getWeeklyHours(now = new Date()): WeeklyHoursRow[] {

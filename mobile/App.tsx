@@ -6,6 +6,8 @@ import { THEME } from './src/theme';
 import { AppRoutes } from './src/routes';
 import { BookingsProvider } from './src/contexts/BookingsContext';
 import { SettingsProvider } from './src/contexts/SettingsContext';
+import { UserRoleProvider } from './src/contexts/UserRoleContext';
+import { PortfolioProvider } from './src/contexts/PortfolioContext';
 
 const navigationTheme: Theme = {
   ...DarkTheme,
@@ -22,14 +24,18 @@ const navigationTheme: Theme = {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SettingsProvider>
-        <BookingsProvider>
-          <NavigationContainer theme={navigationTheme}>
-            <StatusBar barStyle="light-content" backgroundColor={THEME.COLORS.BACKGROUND} />
-            <AppRoutes />
-          </NavigationContainer>
-        </BookingsProvider>
-      </SettingsProvider>
+      <UserRoleProvider>
+        <SettingsProvider>
+          <BookingsProvider>
+            <PortfolioProvider>
+              <NavigationContainer theme={navigationTheme}>
+                <StatusBar barStyle="light-content" backgroundColor={THEME.COLORS.BACKGROUND} />
+                <AppRoutes />
+              </NavigationContainer>
+            </PortfolioProvider>
+          </BookingsProvider>
+        </SettingsProvider>
+      </UserRoleProvider>
     </SafeAreaProvider>
   );
 }

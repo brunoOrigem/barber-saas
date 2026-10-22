@@ -124,6 +124,30 @@ export const USER = {
   phone: '(11) 98888-7777',
 };
 
+/** Barbeiro "logado" no modo profissional, até existir autenticação. */
+export const DEMO_BARBER_ID = 'b1';
+
+/** Nomes usados para preencher a agenda simulada do barbeiro. */
+export const DEMO_CLIENT_NAMES = [
+  'André Martins',
+  'Felipe Costa',
+  'Gustavo Rocha',
+  'Henrique Dias',
+  'João Pereira',
+  'Leonardo Melo',
+  'Mateus Ribeiro',
+  'Thiago Santos',
+];
+
+// Fotos de exemplo usadas para simular o upload de um novo corte.
+export const PORTFOLIO_SAMPLE_IMAGES = [
+  'https://picsum.photos/seed/corte-degrade/600/750',
+  'https://picsum.photos/seed/corte-social/600/750',
+  'https://picsum.photos/seed/corte-barba/600/750',
+  'https://picsum.photos/seed/corte-navalhado/600/750',
+  'https://picsum.photos/seed/corte-texturizado/600/750',
+];
+
 export const APP_VERSION = '1.0.0';
 
 export const SLOT_INTERVAL_MIN = 30;

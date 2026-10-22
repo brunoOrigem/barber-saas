@@ -8,6 +8,7 @@ import { USER } from '../data/mock';
 import { useBookings } from '../contexts/BookingsContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { SettingsRow, SettingsSection } from '../components/SettingsList';
+import { RoleModeSwitch } from '../components/RoleModeSwitch';
 import { openShopWhatsApp } from '../utils/contact';
 
 const AVATAR_SIZE = THEME.SPACING.XL * 2 + THEME.SPACING.MD;
@@ -75,6 +76,8 @@ export function ProfileScreen() {
           last
         />
       </SettingsSection>
+
+      <RoleModeSwitch />
     </ScrollView>
   );
 }
