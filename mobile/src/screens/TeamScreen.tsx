@@ -19,7 +19,13 @@ export function TeamScreen() {
       data={BARBERS}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('BarberDetail', { barberId: item.id })}
+          accessibilityRole="button"
+          accessibilityLabel={`Ver perfil e portfólio de ${item.name}`}
+        >
           <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
           <View style={styles.info}>
             <Text style={styles.name}>{item.name}</Text>
@@ -40,7 +46,7 @@ export function TeamScreen() {
           >
             <Text style={styles.buttonText}>Agendar</Text>
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       )}
     />
   );

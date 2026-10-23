@@ -6,6 +6,7 @@ import { BarberTabRoutes, TabRoutes } from './TabRoutes';
 import { useUserRole } from '../contexts/UserRoleContext';
 import { SelectBarberScreen } from '../screens/SelectBarberScreen';
 import { TeamScreen } from '../screens/TeamScreen';
+import { BarberDetailScreen } from '../screens/BarberDetailScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { LegalScreen } from '../screens/LegalScreen';
 
@@ -39,6 +40,11 @@ export function AppRoutes() {
             options={{ title: 'Novo agendamento' }}
           />
           <Stack.Screen name="Team" component={TeamScreen} options={{ title: 'Nossa equipe' }} />
+          <Stack.Screen
+            name="BarberDetail"
+            component={BarberDetailScreen}
+            options={{ title: 'Profissional' }}
+          />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Configurações' }} />
         </Stack.Group>
       )}

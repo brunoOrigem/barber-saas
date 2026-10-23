@@ -17,6 +17,7 @@ export type RootStackParamList = {
   BarberTabs: NavigatorScreenParams<BarberTabParamList>;
   SelectBarber: { serviceIds?: string[]; barberId?: string } | undefined;
   Team: undefined;
+  BarberDetail: { barberId: string };
   Settings: undefined;
   Legal: { type: 'terms' | 'privacy' };
 };

@@ -6,9 +6,7 @@ export type PortfolioPost = {
   barberId: string;
   imageUrl: string;
   title: string;
-  /** Serviço vinculado ao corte; define o preço exibido no feed. */
-  serviceId: string;
-  price: number;
+  description?: string;
   /** Data de publicação em milissegundos (epoch). */
   publishedAt: number;
 };
@@ -33,8 +31,7 @@ const INITIAL_POSTS: PortfolioPost[] = [
     barberId: DEMO_BARBER_ID,
     imageUrl: PORTFOLIO_SAMPLE_IMAGES[0],
     title: 'Degradê navalhado',
-    serviceId: 'corte',
-    price: 45,
+    description: 'Degradê baixo com acabamento na navalha e topo texturizado.',
     publishedAt: Date.now() - 2 * MS_PER_DAY,
   },
   {
@@ -42,8 +39,7 @@ const INITIAL_POSTS: PortfolioPost[] = [
     barberId: DEMO_BARBER_ID,
     imageUrl: PORTFOLIO_SAMPLE_IMAGES[2],
     title: 'Barba alinhada + corte social',
-    serviceId: 'combo',
-    price: 70,
+    description: 'Corte social na tesoura com barba desenhada e toalha quente.',
     publishedAt: Date.now() - 6 * MS_PER_DAY,
   },
   {
@@ -51,8 +47,6 @@ const INITIAL_POSTS: PortfolioPost[] = [
     barberId: DEMO_BARBER_ID,
     imageUrl: PORTFOLIO_SAMPLE_IMAGES[4],
     title: 'Texturizado com risco',
-    serviceId: 'corte',
-    price: 45,
     publishedAt: Date.now() - 11 * MS_PER_DAY,
   },
 ];

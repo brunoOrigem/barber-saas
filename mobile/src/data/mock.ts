@@ -139,7 +139,7 @@ export const DEMO_CLIENT_NAMES = [
   'Thiago Santos',
 ];
 
-// Fotos de exemplo usadas para simular o upload de um novo corte.
+// Fotos das publicações iniciais do portfólio (mock).
 export const PORTFOLIO_SAMPLE_IMAGES = [
   'https://picsum.photos/seed/corte-degrade/600/750',
   'https://picsum.photos/seed/corte-social/600/750',

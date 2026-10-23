@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
-import { DEMO_BARBER_ID, getServiceById } from '../data/mock';
+import { DEMO_BARBER_ID } from '../data/mock';
 import { PortfolioPost, usePortfolio } from '../contexts/PortfolioContext';
 import { NewPortfolioPostModal, PortfolioDraft } from '../components/NewPortfolioPostModal';
+import { PortfolioPostCard } from '../components/PortfolioPostCard';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { formatPrice, formatTimeAgo } from '../utils/booking';
 
 const HEADER_BUTTON_SIZE = THEME.SPACING.XL + THEME.SPACING.SM;
 
@@ -18,14 +18,8 @@ export function BarberPortfolioManagerScreen() {
 
   const myPosts = posts.filter((post) => post.barberId === DEMO_BARBER_ID);
 
-  function publish({ imageUrl, title, service }: PortfolioDraft) {
-    addPost({
-      barberId: DEMO_BARBER_ID,
-      imageUrl,
-      title,
-      serviceId: service.id,
-      price: service.price,
-    });
+  function publish(draft: PortfolioDraft) {
+    addPost({ barberId: DEMO_BARBER_ID, ...draft });
     setModalVisible(false);
   }
 
@@ -62,7 +56,13 @@ export function BarberPortfolioManagerScreen() {
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => <PostCard post={item} onPress={() => confirmRemove(item)} />}
+        renderItem={({ item }) => (
+          <PortfolioPostCard
+            post={item}
+            onPress={() => confirmRemove(item)}
+            accessibilityHint="Toque para gerenciar a publicação"
+          />
+        )}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="images-outline" size={THEME.SPACING.XL * 1.5} color={THEME.COLORS.TEXT_MUTED} />
@@ -81,34 +81,6 @@ export function BarberPortfolioManagerScreen() {
         onClose={() => setModalVisible(false)}
       />
     </View>
-  );
-}
-
-function PostCard({ post, onPress }: { post: PortfolioPost; onPress: () => void }) {
-  const service = getServiceById(post.serviceId);
-
-  return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.8}
-      accessibilityRole="button"
-      accessibilityLabel={`${post.title}. Toque para gerenciar`}
-    >
-      <Image source={{ uri: post.imageUrl }} style={styles.image} />
-      <View style={styles.cardBody}>
-        <Text style={styles.postTitle} numberOfLines={1}>
-          {post.title}
-        </Text>
-        <Text style={styles.postService} numberOfLines={1}>
-          {service?.name}
-        </Text>
-        <View style={styles.cardFooter}>
-          <Text style={styles.price}>{formatPrice(post.price)}</Text>
-          <Text style={styles.date}>{formatTimeAgo(post.publishedAt)}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
   );
 }
 
@@ -148,47 +120,6 @@ const styles = StyleSheet.create({
   },
   column: {
     gap: THEME.SPACING.SM,
-  },
-  card: {
-    flex: 1,
-    maxWidth: '50%',
-    backgroundColor: THEME.COLORS.CARD_BACKGROUND,
-    borderRadius: THEME.BORDER_RADIUS.LG,
-    overflow: 'hidden',
-    marginBottom: THEME.SPACING.SM,
-  },
-  image: {
-    width: '100%',
-    aspectRatio: 4 / 5,
-    backgroundColor: THEME.COLORS.CARD_SELECTED,
-  },
-  cardBody: {
-    padding: THEME.SPACING.SM + THEME.SPACING.XS,
-  },
-  postTitle: {
-    color: THEME.COLORS.TEXT_PRIMARY,
-    fontSize: THEME.FONT_SIZE.SM,
-    fontWeight: 'bold',
-  },
-  postService: {
-    color: THEME.COLORS.TEXT_SECONDARY,
-    fontSize: THEME.FONT_SIZE.XS,
-    marginTop: THEME.SPACING.XS / 2,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: THEME.SPACING.SM,
-  },
-  price: {
-    color: THEME.COLORS.PRIMARY,
-    fontSize: THEME.FONT_SIZE.SM,
-    fontWeight: 'bold',
-  },
-  date: {
-    color: THEME.COLORS.TEXT_MUTED,
-    fontSize: THEME.FONT_SIZE.XS,
   },
   empty: {
     alignItems: 'center',

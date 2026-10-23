@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -14,16 +15,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { THEME } from '../theme';
-import { PORTFOLIO_SAMPLE_IMAGES, SERVICES, Service } from '../data/mock';
-import { formatPrice } from '../utils/booking';
 import { PrimaryButton } from './PrimaryButton';
-import { SelectableChip } from './SelectableChip';
 
 export type PortfolioDraft = {
   imageUrl: string;
   title: string;
-  service: Service;
+  description?: string;
 };
 
 type Props = {
@@ -33,21 +32,20 @@ type Props = {
 };
 
 const TITLE_MAX_LENGTH = 40;
+const DESCRIPTION_MAX_LENGTH = 200;
 
 export function NewPortfolioPostModal({ visible, onPublish, onClose }: Props) {
   const insets = useSafeAreaInsets();
-  const [imageIndex, setImageIndex] = useState<number | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [title, setTitle] = useState('');
-  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
 
-  const service = SERVICES.find((s) => s.id === serviceId);
-  const imageUrl = imageIndex === null ? null : PORTFOLIO_SAMPLE_IMAGES[imageIndex];
-  const canPublish = Boolean(imageUrl && title.trim() && service);
+  const canPublish = Boolean(imageUri && title.trim());
 
   function reset() {
-    setImageIndex(null);
+    setImageUri(null);
     setTitle('');
-    setServiceId(null);
+    setDescription('');
   }
 
   function close() {
@@ -55,16 +53,25 @@ export function NewPortfolioPostModal({ visible, onPublish, onClose }: Props) {
     onClose();
   }
 
-  // Sem acesso real à galeria no MVP: percorre fotos de exemplo.
-  function pickPhoto() {
-    setImageIndex((current) =>
-      current === null ? 0 : (current + 1) % PORTFOLIO_SAMPLE_IMAGES.length,
-    );
+  // Selecionar imagens da galeria não exige pedir permissão antes: o sistema
+  // abre o seletor nativo (no iOS, a mensagem vem do plugin no app.json).
+  async function pickPhoto() {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 5],
+        quality: 0.8,
+      });
+      if (!result.canceled) setImageUri(result.assets[0].uri);
+    } catch {
+      Alert.alert('Não foi possível abrir a galeria', 'Verifique as permissões do app e tente novamente.');
+    }
   }
 
   function publish() {
-    if (!imageUrl || !service) return;
-    onPublish({ imageUrl, title: title.trim(), service });
+    if (!imageUri || !title.trim()) return;
+    onPublish({ imageUrl: imageUri, title: title.trim(), description: description.trim() || undefined });
     reset();
   }
 
@@ -83,18 +90,17 @@ export function NewPortfolioPostModal({ visible, onPublish, onClose }: Props) {
                   <Ionicons name="close" size={THEME.FONT_SIZE.XL} color={THEME.COLORS.TEXT_SECONDARY} />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.subtitle}>A publicação aparecerá no feed para os clientes.</Text>
 
               <TouchableOpacity
-                style={[styles.photo, !imageUrl && styles.photoEmpty]}
+                style={[styles.photo, !imageUri && styles.photoEmpty]}
                 onPress={pickPhoto}
                 activeOpacity={0.8}
                 accessibilityRole="button"
-                accessibilityLabel={imageUrl ? 'Trocar foto' : 'Selecionar foto'}
+                accessibilityLabel={imageUri ? 'Trocar foto' : 'Selecionar foto da galeria'}
               >
-                {imageUrl ? (
+                {imageUri ? (
                   <>
-                    <Image source={{ uri: imageUrl }} style={styles.photoImage} />
+                    <Image source={{ uri: imageUri }} style={styles.photoImage} />
                     <View style={styles.photoBadge}>
                       <Ionicons name="swap-horizontal" size={THEME.FONT_SIZE.SM} color={THEME.COLORS.TEXT_PRIMARY} />
                       <Text style={styles.photoBadgeText}>Trocar foto</Text>
@@ -102,45 +108,37 @@ export function NewPortfolioPostModal({ visible, onPublish, onClose }: Props) {
                   </>
                 ) : (
                   <>
-                    <Ionicons name="camera-outline" size={THEME.FONT_SIZE.XXL} color={THEME.COLORS.PRIMARY} />
-                    <Text style={styles.photoLabel}>Selecionar foto</Text>
-                    <Text style={styles.photoHint}>Simulação de envio da galeria</Text>
+                    <Ionicons name="images-outline" size={THEME.FONT_SIZE.XXL} color={THEME.COLORS.PRIMARY} />
+                    <Text style={styles.photoLabel}>Selecionar foto da galeria</Text>
                   </>
                 )}
               </TouchableOpacity>
 
-              <Text style={styles.label}>Título do corte</Text>
+              <Text style={styles.label}>Nome do corte / Descrição</Text>
               <TextInput
                 style={styles.input}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Ex: Degradê com risco"
+                placeholder="Nome do corte (ex: Degradê com risco)"
                 placeholderTextColor={THEME.COLORS.TEXT_MUTED}
                 maxLength={TITLE_MAX_LENGTH}
-                returnKeyType="done"
+                returnKeyType="next"
+                selectionColor={THEME.COLORS.PRIMARY}
+              />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Descrição (opcional)"
+                placeholderTextColor={THEME.COLORS.TEXT_MUTED}
+                maxLength={DESCRIPTION_MAX_LENGTH}
+                multiline
+                textAlignVertical="top"
                 selectionColor={THEME.COLORS.PRIMARY}
               />
 
-              <Text style={styles.label}>Serviço vinculado</Text>
-              <View style={styles.services}>
-                {SERVICES.map((s) => (
-                  <SelectableChip
-                    key={s.id}
-                    label={s.name}
-                    sublabel={formatPrice(s.price)}
-                    selected={s.id === serviceId}
-                    onPress={() => setServiceId(s.id)}
-                    style={styles.serviceChip}
-                  />
-                ))}
-              </View>
-
               <View style={styles.footer}>
-                <PrimaryButton
-                  title={service ? `Publicar · ${formatPrice(service.price)}` : 'Publicar no feed'}
-                  onPress={publish}
-                  disabled={!canPublish}
-                />
+                <PrimaryButton title="Publicar no Portfólio" onPress={publish} disabled={!canPublish} />
               </View>
             </ScrollView>
           </Pressable>
@@ -151,6 +149,7 @@ export function NewPortfolioPostModal({ visible, onPublish, onClose }: Props) {
 }
 
 const PHOTO_HEIGHT = THEME.SPACING.XL * 6;
+const TEXT_AREA_HEIGHT = THEME.SPACING.XL * 3;
 
 const styles = StyleSheet.create({
   flex: {
@@ -172,17 +171,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: THEME.SPACING.MD,
   },
   title: {
     color: THEME.COLORS.TEXT_PRIMARY,
     fontSize: THEME.FONT_SIZE.LG,
     fontWeight: 'bold',
-  },
-  subtitle: {
-    color: THEME.COLORS.TEXT_SECONDARY,
-    fontSize: THEME.FONT_SIZE.SM,
-    marginTop: THEME.SPACING.XS,
-    marginBottom: THEME.SPACING.MD,
   },
   photo: {
     height: PHOTO_HEIGHT,
@@ -223,11 +217,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: THEME.SPACING.SM,
   },
-  photoHint: {
-    color: THEME.COLORS.TEXT_MUTED,
-    fontSize: THEME.FONT_SIZE.XS,
-    marginTop: THEME.SPACING.XS / 2,
-  },
   label: {
     color: THEME.COLORS.TEXT_MUTED,
     fontSize: THEME.FONT_SIZE.XS,
@@ -247,14 +236,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.SPACING.MD,
     paddingVertical: THEME.SPACING.SM + THEME.SPACING.XS,
   },
-  services: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: THEME.SPACING.SM,
-  },
-  serviceChip: {
-    flexGrow: 1,
-    flexBasis: '45%',
+  textArea: {
+    height: TEXT_AREA_HEIGHT,
+    marginTop: THEME.SPACING.SM,
   },
   footer: {
     marginTop: THEME.SPACING.LG,
