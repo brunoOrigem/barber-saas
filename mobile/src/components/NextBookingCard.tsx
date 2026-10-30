@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { Booking } from '../contexts/BookingsContext';
+import { useServices } from '../contexts/ServicesContext';
 import { getBarberById } from '../data/mock';
 import { describeServices, formatRelativeDay, formatTime, minutesOfDay } from '../utils/booking';
 
@@ -15,6 +16,8 @@ type Props = {
 const AVATAR_SIZE = THEME.SPACING.XL + THEME.SPACING.MD;
 
 export function NextBookingCard({ booking, onPressDetails, onPressSchedule }: Props) {
+  const { services } = useServices();
+
   if (!booking) {
     return (
       <TouchableOpacity
@@ -50,7 +53,7 @@ export function NextBookingCard({ booking, onPressDetails, onPressSchedule }: Pr
         <View style={styles.info}>
           <Text style={styles.barberName}>{barber?.name}</Text>
           <Text style={styles.services} numberOfLines={1}>
-            {describeServices(booking.serviceIds)}
+            {describeServices(booking.serviceIds, services)}
           </Text>
         </View>
       </View>

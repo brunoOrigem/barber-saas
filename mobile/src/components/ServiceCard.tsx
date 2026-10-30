@@ -11,16 +11,21 @@ type Props = {
   onPress: () => void;
   /** Exibe um indicador de seleção múltipla (checkbox). */
   showCheckbox?: boolean;
+  disabled?: boolean;
+  /** Texto curto exibido no lugar da duração (ex: motivo do bloqueio). */
+  note?: string;
 };
 
-export function ServiceCard({ service, selected, onPress, showCheckbox }: Props) {
+export function ServiceCard({ service, selected, onPress, showCheckbox, disabled, note }: Props) {
   return (
     <TouchableOpacity
-      style={[styles.card, selected && styles.cardSelected]}
+      style={[styles.card, selected && styles.cardSelected, disabled && styles.cardDisabled]}
       activeOpacity={0.7}
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole={showCheckbox ? 'checkbox' : 'radio'}
-      accessibilityState={{ checked: selected }}
+      accessibilityState={{ checked: selected, disabled }}
+      accessibilityHint={note}
     >
       {showCheckbox && (
         <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
@@ -39,8 +44,12 @@ export function ServiceCard({ service, selected, onPress, showCheckbox }: Props)
       <View style={styles.info}>
         <Text style={styles.name}>{service.name}</Text>
         <View style={styles.durationRow}>
-          <Ionicons name="time-outline" size={THEME.FONT_SIZE.SM} color={THEME.COLORS.TEXT_MUTED} />
-          <Text style={styles.duration}>{formatDuration(service.durationMin)}</Text>
+          <Ionicons
+            name={note ? 'lock-closed-outline' : 'time-outline'}
+            size={THEME.FONT_SIZE.SM}
+            color={THEME.COLORS.TEXT_MUTED}
+          />
+          <Text style={styles.duration}>{note ?? formatDuration(service.durationMin)}</Text>
         </View>
       </View>
       <Text style={styles.price}>{formatPrice(service.price)}</Text>
@@ -62,6 +71,9 @@ const styles = StyleSheet.create({
   cardSelected: {
     borderColor: THEME.COLORS.PRIMARY,
     backgroundColor: THEME.COLORS.CARD_SELECTED,
+  },
+  cardDisabled: {
+    opacity: 0.45,
   },
   checkbox: {
     width: THEME.SPACING.LG,

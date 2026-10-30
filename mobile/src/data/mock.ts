@@ -11,6 +11,8 @@ export type Service = {
   icon: ServiceIconName;
   /** Serviços já incluídos neste (ex: o combo inclui corte e barba). */
   includes?: string[];
+  /** Serviços inativos não aparecem para o cliente no agendamento. */
+  active: boolean;
 };
 
 export type Barber = {
@@ -22,9 +24,10 @@ export type Barber = {
   avatarUrl: string;
 };
 
-export const SERVICES: Service[] = [
-  { id: 'corte', name: 'Corte de Cabelo', price: 45, durationMin: 45, icon: 'content-cut' },
-  { id: 'barba', name: 'Barba Completa', price: 35, durationMin: 30, icon: 'razor-double-edge' },
+// Catálogo inicial; o barbeiro edita os serviços em tempo de execução (ServicesContext).
+export const DEFAULT_SERVICES: Service[] = [
+  { id: 'corte', name: 'Corte de Cabelo', price: 45, durationMin: 45, icon: 'content-cut', active: true },
+  { id: 'barba', name: 'Barba Completa', price: 35, durationMin: 30, icon: 'razor-double-edge', active: true },
   {
     id: 'combo',
     name: 'Combo Cabelo + Barba',
@@ -32,8 +35,25 @@ export const SERVICES: Service[] = [
     durationMin: 75,
     icon: 'face-man-shimmer',
     includes: ['corte', 'barba'],
+    active: true,
   },
-  { id: 'sobrancelha', name: 'Sobrancelha', price: 15, durationMin: 15, icon: 'eye-outline' },
+  { id: 'sobrancelha', name: 'Sobrancelha', price: 15, durationMin: 15, icon: 'eye-outline', active: true },
+];
+
+/** Ícones disponíveis ao criar um novo serviço. */
+export const SERVICE_ICON_OPTIONS: ServiceIconName[] = [
+  'content-cut',
+  'razor-double-edge',
+  'face-man-shimmer',
+  'face-man-outline',
+  'mustache',
+  'eye-outline',
+  'hair-dryer-outline',
+  'spray-bottle',
+  'lotion-outline',
+  'spa-outline',
+  'water-outline',
+  'shimmer',
 ];
 
 export const BARBERS: Barber[] = [
@@ -90,6 +110,8 @@ export type Shop = {
   address: string;
   city: string;
   whatsapp: string;
+  /** Handle do Instagram, sem "@" (ex: "danilloandreoli.barber"). */
+  instagram?: string;
 };
 
 // Barbearias parceiras da plataforma (SaaS). O cliente escolhe uma ativa.
@@ -100,6 +122,7 @@ export const PARTNER_SHOPS: Shop[] = [
     address: 'Rua das Tesouras, 123 – Centro',
     city: 'São Paulo – SP',
     whatsapp: '5511999999999',
+    instagram: 'danilloandreoli.barber',
   },
   {
     id: 'navalha',
@@ -152,10 +175,6 @@ export const APP_VERSION = '1.0.0';
 
 export const SLOT_INTERVAL_MIN = 30;
 export const BOOKING_DAYS_AHEAD = 7;
-
-export function getServiceById(id: string) {
-  return SERVICES.find((service) => service.id === id);
-}
 
 export function getBarberById(id: string) {
   return BARBERS.find((barber) => barber.id === id);

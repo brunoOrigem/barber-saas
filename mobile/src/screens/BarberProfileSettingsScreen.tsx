@@ -6,9 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { APP_VERSION, DEMO_BARBER_ID, getBarberById } from '../data/mock';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import { useServices } from '../contexts/ServicesContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { SettingsRow, SettingsSection } from '../components/SettingsList';
 import { RoleModeSwitch } from '../components/RoleModeSwitch';
+import { InstagramLinkEditor } from '../components/InstagramLinkEditor';
 
 const AVATAR_SIZE = THEME.SPACING.XL * 2 + THEME.SPACING.MD;
 
@@ -16,6 +18,7 @@ export function BarberProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { posts } = usePortfolio();
+  const { activeServices } = useServices();
   const { activeShop } = useSettings();
 
   const barber = getBarberById(DEMO_BARBER_ID);
@@ -23,6 +26,7 @@ export function BarberProfileSettingsScreen() {
 
   return (
     <ScrollView
+      keyboardShouldPersistTaps="handled"
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + THEME.SPACING.MD }]}
       showsVerticalScrollIndicator={false}
@@ -52,9 +56,17 @@ export function BarberProfileSettingsScreen() {
           label="Portfólio"
           value={`${postsCount} ${postsCount === 1 ? 'publicação' : 'publicações'} no feed`}
           onPress={() => navigation.navigate('BarberTabs', { screen: 'BarberPortfolio' })}
+        />
+        <SettingsRow
+          icon="pricetags-outline"
+          label="Gerenciar serviços"
+          value={`${activeServices.length} ${activeServices.length === 1 ? 'serviço ativo' : 'serviços ativos'} · preços e durações`}
+          onPress={() => navigation.navigate('BarberServices')}
           last
         />
       </SettingsSection>
+
+      <InstagramLinkEditor />
 
       <RoleModeSwitch />
 
