@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { THEME } from '../theme';
-import { BARBERS, SERVICES, getServiceById } from '../data/mock';
+import { BARBERS, Service } from '../data/mock';
 import { RootStackParamList } from '../routes';
 import { BarberCard } from '../components/BarberCard';
 import { ServiceCard } from '../components/ServiceCard';
@@ -12,6 +12,7 @@ import { SelectableChip } from '../components/SelectableChip';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { BookingSummaryModal } from '../components/BookingSummaryModal';
 import { useBookings } from '../contexts/BookingsContext';
+import { useServices } from '../contexts/ServicesContext';
 import {
   formatDuration,
   formatPrice,
@@ -20,25 +21,34 @@ import {
   minutesOfDay,
   toDayKey,
 } from '../utils/booking';
+import {
+  getLockedServiceIds,
+  normalizeSelection,
+  toggleServiceSelection,
+} from '../utils/serviceSelection';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SelectBarber'>;
 
 export function SelectBarberScreen({ route, navigation }: Props) {
   const days = useMemo(() => getBookingDays(), []);
   const { upcoming, addBooking } = useBookings();
+  const { services, activeServices } = useServices();
 
   const [barberId, setBarberId] = useState<string | null>(() => {
     const id = route.params?.barberId;
     return id && BARBERS.some((b) => b.id === id) ? id : null;
   });
   const [serviceIds, setServiceIds] = useState<string[]>(() =>
-    (route.params?.serviceIds ?? []).filter((id) => getServiceById(id)),
+    normalizeSelection(route.params?.serviceIds ?? [], services),
   );
+  const [mergedBundle, setMergedBundle] = useState<Service | null>(null);
   const [dayKey, setDayKey] = useState(() => (days.find((d) => d.hours) ?? days[0]).key);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [summaryVisible, setSummaryVisible] = useState(false);
 
-  const selectedServices = SERVICES.filter((service) => serviceIds.includes(service.id));
+  // Preços e serviços vêm do catálogo editado pelo barbeiro (ServicesContext).
+  const selectedServices = activeServices.filter((service) => serviceIds.includes(service.id));
+  const lockedIds = getLockedServiceIds(serviceIds, activeServices);
   const totalPrice = selectedServices.reduce((sum, service) => sum + service.price, 0);
   const totalDuration = selectedServices.reduce((sum, service) => sum + service.durationMin, 0);
 
@@ -60,17 +70,13 @@ export function SelectBarberScreen({ route, navigation }: Props) {
   const canProceed = !!barber && selectedServices.length > 0 && !!time;
 
   function toggleService(id: string) {
-    setServiceIds((current) => {
-      if (current.includes(id)) return current.filter((sid) => sid !== id);
+    const result = toggleServiceSelection(serviceIds, id, activeServices);
+    setServiceIds(result.serviceIds);
+    setMergedBundle(result.mergedInto ?? null);
+  }
 
-      const service = getServiceById(id);
-      const includes = service?.includes ?? [];
-      // Combo e serviços que ele já inclui são mutuamente exclusivos.
-      const withoutOverlaps = current.filter(
-        (sid) => !includes.includes(sid) && !getServiceById(sid)?.includes?.includes(id),
-      );
-      return [...withoutOverlaps, id];
-    });
+  function bundleOf(id: string) {
+    return selectedServices.find((s) => s.includes?.includes(id));
   }
 
   function handleConfirm() {
@@ -124,15 +130,23 @@ export function SelectBarberScreen({ route, navigation }: Props) {
 
         <Text style={styles.sectionTitle}>Serviços</Text>
         <View style={styles.section}>
-          {SERVICES.map((service) => (
-            <ServiceCard
-              key={service.id}
-              service={service}
-              selected={serviceIds.includes(service.id)}
-              onPress={() => toggleService(service.id)}
-              showCheckbox
-            />
-          ))}
+          {mergedBundle && (
+            <MergeNotice bundle={mergedBundle} services={services} onClose={() => setMergedBundle(null)} />
+          )}
+          {activeServices.map((service) => {
+            const locked = lockedIds.has(service.id);
+            return (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                selected={serviceIds.includes(service.id)}
+                onPress={() => toggleService(service.id)}
+                disabled={locked}
+                note={locked ? `Incluído no ${bundleOf(service.id)?.name}` : undefined}
+                showCheckbox
+              />
+            );
+          })}
           <View style={styles.totals}>
             <View style={styles.totalsDuration}>
               <Ionicons name="time-outline" size={THEME.FONT_SIZE.SM} color={THEME.COLORS.TEXT_SECONDARY} />
@@ -216,7 +230,52 @@ export function SelectBarberScreen({ route, navigation }: Props) {
   );
 }
 
+function MergeNotice({
+  bundle,
+  services,
+  onClose,
+}: {
+  bundle: Service;
+  services: Service[];
+  onClose: () => void;
+}) {
+  const items = services.filter((s) => bundle.includes?.includes(s.id));
+  const savings = items.reduce((sum, s) => sum + s.price, 0) - bundle.price;
+
+  return (
+    <View style={styles.notice} accessibilityLiveRegion="polite">
+      <Ionicons name="sparkles-outline" size={THEME.FONT_SIZE.LG} color={THEME.COLORS.PRIMARY} />
+      <Text style={styles.noticeText}>
+        {items.map((s) => s.name).join(' + ')} viraram o <Text style={styles.noticeStrong}>{bundle.name}</Text>
+        {savings > 0 ? ` · você economiza ${formatPrice(savings)}` : ''}.
+      </Text>
+      <TouchableOpacity onPress={onClose} accessibilityRole="button" accessibilityLabel="Fechar aviso">
+        <Ionicons name="close" size={THEME.FONT_SIZE.MD} color={THEME.COLORS.TEXT_MUTED} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: THEME.SPACING.SM,
+    padding: THEME.SPACING.MD,
+    marginBottom: THEME.SPACING.SM,
+    borderRadius: THEME.BORDER_RADIUS.MD,
+    borderWidth: 1,
+    borderColor: THEME.COLORS.PRIMARY,
+    backgroundColor: THEME.COLORS.PRIMARY_SOFT,
+  },
+  noticeText: {
+    flex: 1,
+    color: THEME.COLORS.TEXT_PRIMARY,
+    fontSize: THEME.FONT_SIZE.SM,
+  },
+  noticeStrong: {
+    fontWeight: 'bold',
+  },
   container: {
     flex: 1,
     backgroundColor: THEME.COLORS.BACKGROUND,

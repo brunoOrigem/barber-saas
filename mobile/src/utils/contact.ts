@@ -23,3 +23,29 @@ export function openShopWhatsApp(shop: Shop, message = 'Olá! Gostaria de falar 
     'Verifique se o WhatsApp está instalado.',
   );
 }
+
+const INSTAGRAM_HANDLE_PATTERN = /^[a-z0-9._]{1,30}$/;
+
+/**
+ * Aceita "@handle", "handle" ou a URL do perfil (instagram.com/handle, com ou sem
+ * protocolo/www) e devolve o handle normalizado, ou null se for inválido.
+ */
+export function parseInstagramHandle(input: string): string | null {
+  const trimmed = input.trim();
+  const fromUrl = trimmed.match(/^(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|instagr\.am)\/([^/?#]+)/i);
+  const handle = (fromUrl ? fromUrl[1] : trimmed).replace(/^@/, '').toLowerCase();
+  return INSTAGRAM_HANDLE_PATTERN.test(handle) ? handle : null;
+}
+
+export function getInstagramProfileUrl(handle: string) {
+  return `https://instagram.com/${handle}`;
+}
+
+export async function openInstagramProfile(handle: string) {
+  // Tenta o app nativo; se não estiver instalado o openURL rejeita e caímos no navegador.
+  try {
+    await Linking.openURL(`instagram://user?username=${handle}`);
+  } catch {
+    await openUrl(getInstagramProfileUrl(handle), 'Não foi possível abrir o perfil do Instagram.');
+  }
+}

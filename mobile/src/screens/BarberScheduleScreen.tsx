@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { DEMO_BARBER_ID, USER } from '../data/mock';
 import { useBookings } from '../contexts/BookingsContext';
+import { useServices } from '../contexts/ServicesContext';
 import { useSettings } from '../contexts/SettingsContext';
 import {
   BarberAppointment,
@@ -35,6 +36,7 @@ function getStatus(appointment: BarberAppointment, nowMin: number): AppointmentS
 export function BarberScheduleScreen() {
   const insets = useSafeAreaInsets();
   const { bookings } = useBookings();
+  const { services } = useServices();
   const { activeShop } = useSettings();
 
   const now = new Date();
@@ -60,10 +62,10 @@ export function BarberScheduleScreen() {
         fromApp: true,
       }));
 
-    return [...getSimulatedAppointments(DEMO_BARBER_ID, new Date()), ...fromApp].sort(
+    return [...getSimulatedAppointments(DEMO_BARBER_ID, new Date(), services), ...fromApp].sort(
       (a, b) => a.startMin - b.startMin,
     );
-  }, [bookings, todayKey]);
+  }, [bookings, services, todayKey]);
 
   const revenue = appointments.reduce((sum, a) => sum + a.price, 0);
   const next = appointments.find((a) => getStatus(a, nowMin) !== 'done');
@@ -120,6 +122,7 @@ function AppointmentRow({
   appointment: BarberAppointment;
   status: AppointmentStatus;
 }) {
+  const { services } = useServices();
   const { label, color } = STATUS[status];
   const done = status === 'done';
 
@@ -140,7 +143,7 @@ function AppointmentRow({
           <Text style={[styles.status, { color }]}>{label}</Text>
         </View>
         <Text style={styles.services} numberOfLines={2}>
-          {describeServices(appointment.serviceIds)}
+          {describeServices(appointment.serviceIds, services)}
         </Text>
         <View style={styles.meta}>
           <View style={styles.metaItem}>

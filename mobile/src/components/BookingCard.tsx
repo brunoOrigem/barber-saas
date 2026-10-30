@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../theme';
 import { Booking, BookingStatus } from '../contexts/BookingsContext';
+import { useServices } from '../contexts/ServicesContext';
 import { getBarberById } from '../data/mock';
 import {
   describeServices,
@@ -28,6 +29,7 @@ const STATUS: Record<BookingStatus, { label: string; color: string }> = {
 const AVATAR_SIZE = THEME.SPACING.XL + THEME.SPACING.SM;
 
 export function BookingCard({ booking, onCancel, onRebook }: Props) {
+  const { services } = useServices();
   const barber = getBarberById(booking.barberId);
   const date = new Date(booking.startsAt);
   const status = STATUS[booking.status];
@@ -38,7 +40,7 @@ export function BookingCard({ booking, onCancel, onRebook }: Props) {
         {barber && <Image source={{ uri: barber.avatarUrl }} style={styles.avatar} />}
         <View style={styles.info}>
           <Text style={styles.services} numberOfLines={2}>
-            {describeServices(booking.serviceIds)}
+            {describeServices(booking.serviceIds, services)}
           </Text>
           <Text style={styles.barber}>com {barber?.name}</Text>
         </View>

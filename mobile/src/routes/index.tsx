@@ -9,6 +9,7 @@ import { TeamScreen } from '../screens/TeamScreen';
 import { BarberDetailScreen } from '../screens/BarberDetailScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { LegalScreen } from '../screens/LegalScreen';
+import { BarberServicesScreen } from '../screens/BarberServicesScreen';
 
 export type { RootStackParamList, TabParamList, BarberTabParamList } from './types';
 
@@ -30,7 +31,14 @@ export function AppRoutes() {
       }}
     >
       {userRole === 'barber' ? (
-        <Stack.Screen name="BarberTabs" component={BarberTabRoutes} options={{ headerShown: false }} />
+        <Stack.Group>
+          <Stack.Screen name="BarberTabs" component={BarberTabRoutes} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="BarberServices"
+            component={BarberServicesScreen}
+            options={{ title: 'Gerenciar serviços' }}
+          />
+        </Stack.Group>
       ) : (
         <Stack.Group>
           <Stack.Screen name="MainTabs" component={TabRoutes} options={{ headerShown: false }} />

@@ -10,6 +10,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { NextBookingCard } from '../components/NextBookingCard';
 import { ShortcutTile } from '../components/ShortcutTile';
 import { ShopInfoCard } from '../components/ShopInfoCard';
+import { InstagramCard } from '../components/InstagramCard';
 import { openShopOnMaps, openShopWhatsApp } from '../utils/contact';
 
 const LOGO_SIZE = THEME.SPACING.XL + THEME.SPACING.MD;
@@ -97,6 +98,7 @@ export function HomeScreen() {
 
       <Text style={styles.sectionTitle}>Informações</Text>
       <ShopInfoCard />
+      <InstagramCard />
     </ScrollView>
   );
 }

@@ -4,7 +4,7 @@ import {
   BusinessHours,
   DEMO_CLIENT_NAMES,
   SLOT_INTERVAL_MIN,
-  getServiceById,
+  Service,
 } from '../data/mock';
 
 export type BookingDay = {
@@ -100,9 +100,9 @@ export function formatTimeAgo(timestamp: number, now = new Date()) {
   return `Há ${diff} dias`;
 }
 
-export function describeServices(serviceIds: string[]) {
+export function describeServices(serviceIds: string[], services: Service[]) {
   return serviceIds
-    .map((id) => getServiceById(id)?.name)
+    .map((id) => services.find((service) => service.id === id)?.name)
     .filter(Boolean)
     .join(' + ');
 }
@@ -196,7 +196,11 @@ const MAX_BLOCKS_PER_APPOINTMENT = 3;
  * Agenda simulada do barbeiro no dia (mock). Usa os mesmos blocos ocupados
  * que o cliente vê como indisponíveis, mantendo as duas visões consistentes.
  */
-export function getSimulatedAppointments(barberId: string, date: Date): BarberAppointment[] {
+export function getSimulatedAppointments(
+  barberId: string,
+  date: Date,
+  services: Service[],
+): BarberAppointment[] {
   const hours = BUSINESS_HOURS[date.getDay()];
   if (!hours) return [];
 
@@ -213,7 +217,10 @@ export function getSimulatedAppointments(barberId: string, date: Date): BarberAp
       serviceIds,
       startMin,
       durationMin: blocks * SLOT_INTERVAL_MIN,
-      price: serviceIds.reduce((sum, id) => sum + (getServiceById(id)?.price ?? 0), 0),
+      price: serviceIds.reduce(
+        (sum, id) => sum + (services.find((service) => service.id === id)?.price ?? 0),
+        0,
+      ),
     });
   };
 
