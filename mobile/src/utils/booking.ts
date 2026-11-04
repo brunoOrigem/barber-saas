@@ -1,11 +1,10 @@
 import {
-  BOOKING_DAYS_AHEAD,
-  BUSINESS_HOURS,
   BusinessHours,
   DEMO_CLIENT_NAMES,
   SLOT_INTERVAL_MIN,
   Service,
 } from '../data/mock';
+import type { WorkingDay } from '../contexts/SettingsContext';
 
 export type BookingDay = {
   key: string;
@@ -19,7 +18,7 @@ export type BookingDay = {
 export type TakenRange = { startMin: number; durationMin: number };
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const WEEKDAYS_LONG = [
+export const WEEKDAYS_LONG = [
   'Domingo',
   'Segunda-feira',
   'Terça-feira',
@@ -28,7 +27,7 @@ const WEEKDAYS_LONG = [
   'Sexta-feira',
   'Sábado',
 ];
-const MONTHS = [
+export const MONTHS = [
   'janeiro',
   'fevereiro',
   'março',
@@ -73,7 +72,7 @@ export function minutesOfDay(date: Date) {
   return date.getHours() * 60 + date.getMinutes();
 }
 
-function startOfDay(date: Date) {
+export function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
@@ -107,18 +106,47 @@ export function describeServices(serviceIds: string[], services: Service[]) {
     .join(' + ');
 }
 
-export function getBookingDays(today = new Date()): BookingDay[] {
-  return Array.from({ length: BOOKING_DAYS_AHEAD }, (_, index) => {
-    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + index);
-    const label = index === 0 ? 'Hoje' : index === 1 ? 'Amanhã' : WEEKDAYS[date.getDay()];
-    return {
-      key: toDayKey(date),
-      label,
-      sublabel: formatDayMonth(date),
-      date,
-      hours: BUSINESS_HOURS[date.getDay()],
-    };
-  });
+const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+/** Valida um horário no formato "HH:MM" (24h). */
+export function isValidTime(value: string) {
+  return TIME_PATTERN.test(value);
+}
+
+/** Converte "HH:MM" em minutos desde a meia-noite (assume formato válido). */
+export function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+/**
+ * Converte os dias configurados pelo barbeiro para a grade usada na agenda,
+ * indexada por `Date.getDay()` (0 = domingo). Dias fechados ou com horário
+ * inválido ficam `null`.
+ */
+export function toBusinessHours(workingDays: WorkingDay[]): BusinessHours[] {
+  const schedule: BusinessHours[] = WEEKDAYS_LONG.map(() => null);
+  for (const day of workingDays) {
+    const index = WEEKDAYS_LONG.indexOf(day.day);
+    if (index === -1 || !day.isOpen) continue;
+    if (!isValidTime(day.openTime) || !isValidTime(day.closeTime)) continue;
+    const open = timeToMinutes(day.openTime);
+    const close = timeToMinutes(day.closeTime);
+    if (open < close) schedule[index] = { open, close };
+  }
+  return schedule;
+}
+
+/** Monta o dia de agendamento exibido no resumo, para qualquer data do ano. */
+export function toBookingDay(date: Date, hours: BusinessHours, now = new Date()): BookingDay {
+  const day = startOfDay(date);
+  const diff = Math.round((day.getTime() - startOfDay(now).getTime()) / MS_PER_DAY);
+  const label = diff === 0 ? 'Hoje' : diff === 1 ? 'Amanhã' : WEEKDAYS[day.getDay()];
+  const sublabel =
+    day.getFullYear() === now.getFullYear()
+      ? formatDayMonth(day)
+      : `${formatDayMonth(day)}/${day.getFullYear()}`;
+  return { key: toDayKey(day), label, sublabel, date: day, hours };
 }
 
 /** Simula a agenda já ocupada do barbeiro de forma determinística (mock). */
@@ -149,8 +177,8 @@ export function getAvailableTimes(
 ): string[] {
   if (durationMin <= 0 || !day.hours) return [];
 
-  const opening = day.hours.open * 60;
-  const closing = day.hours.close * 60;
+  const opening = day.hours.open;
+  const closing = day.hours.close;
   const isToday = day.key === toDayKey(now);
   const nowMin = minutesOfDay(now);
   const times: string[] = [];
@@ -200,13 +228,15 @@ export function getSimulatedAppointments(
   barberId: string,
   date: Date,
   services: Service[],
+  hours: BusinessHours,
+  /** Horários bloqueados pelo barbeiro: ficam livres de clientes simulados. */
+  blocked: TakenRange[] = [],
 ): BarberAppointment[] {
-  const hours = BUSINESS_HOURS[date.getDay()];
   if (!hours) return [];
 
   const dayKey = toDayKey(date);
-  const opening = hours.open * 60;
-  const closing = hours.close * 60;
+  const opening = hours.open;
+  const closing = hours.close;
   const appointments: BarberAppointment[] = [];
 
   const push = (startMin: number, blocks: number) => {
@@ -226,7 +256,10 @@ export function getSimulatedAppointments(
 
   let runStart: number | null = null;
   for (let block = opening; block <= closing; block += SLOT_INTERVAL_MIN) {
-    const busy = block < closing && isBlockBusy(barberId, dayKey, block);
+    const busy =
+      block < closing &&
+      !blocked.some((range) => overlaps(block, SLOT_INTERVAL_MIN, range)) &&
+      isBlockBusy(barberId, dayKey, block);
     if (busy) {
       runStart ??= block;
       const blocks = (block + SLOT_INTERVAL_MIN - runStart) / SLOT_INTERVAL_MIN;
@@ -243,17 +276,17 @@ export function getSimulatedAppointments(
   return appointments;
 }
 
-export type WeeklyHoursRow ={ label: string; value: string; isToday: boolean };
+export type WeeklyHoursRow = { label: string; value: string; isToday: boolean };
 
 /** Agrupa dias consecutivos com o mesmo horário, começando na segunda-feira. */
-export function getWeeklyHours(now = new Date()): WeeklyHoursRow[] {
+export function getWeeklyHours(schedule: BusinessHours[], now = new Date()): WeeklyHoursRow[] {
   const order = [1, 2, 3, 4, 5, 6, 0];
   const describe = (hours: BusinessHours) =>
-    hours ? `${formatTime(hours.open * 60)} – ${formatTime(hours.close * 60)}` : 'Fechado';
+    hours ? `${formatTime(hours.open)} – ${formatTime(hours.close)}` : 'Fechado';
 
   const rows: { days: number[]; value: string }[] = [];
   for (const day of order) {
-    const value = describe(BUSINESS_HOURS[day]);
+    const value = describe(schedule[day]);
     const last = rows[rows.length - 1];
     if (last && last.value === value) last.days.push(day);
     else rows.push({ days: [day], value });
@@ -269,9 +302,9 @@ export function getWeeklyHours(now = new Date()): WeeklyHoursRow[] {
   }));
 }
 
-export function isShopOpen(now = new Date()) {
-  const hours = BUSINESS_HOURS[now.getDay()];
+export function isShopOpen(schedule: BusinessHours[], now = new Date()) {
+  const hours = schedule[now.getDay()];
   if (!hours) return false;
   const nowMin = minutesOfDay(now);
-  return nowMin >= hours.open * 60 && nowMin < hours.close * 60;
+  return nowMin >= hours.open && nowMin < hours.close;
 }

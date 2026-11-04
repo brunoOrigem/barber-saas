@@ -8,6 +8,7 @@ export type TabParamList = {
 
 export type BarberTabParamList = {
   BarberSchedule: undefined;
+  BarberCalendar: undefined;
   BarberPortfolio: undefined;
   BarberProfile: undefined;
 };
@@ -16,6 +17,7 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList>;
   BarberTabs: NavigatorScreenParams<BarberTabParamList>;
   BarberServices: undefined;
+  BarberWorkingHours: undefined;
   SelectBarber: { serviceIds?: string[]; barberId?: string } | undefined;
   Team: undefined;
   BarberDetail: { barberId: string };

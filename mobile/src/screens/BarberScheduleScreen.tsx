@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { DEMO_BARBER_ID, USER } from '../data/mock';
 import { useBookings } from '../contexts/BookingsContext';
 import { useServices } from '../contexts/ServicesContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useCalendar } from '../contexts/CalendarContext';
 import {
   BarberAppointment,
   describeServices,
@@ -38,34 +39,37 @@ export function BarberScheduleScreen() {
   const { bookings } = useBookings();
   const { services } = useServices();
   const { activeShop } = useSettings();
+  const { getDayAvailability } = useCalendar();
 
   const now = new Date();
   const todayKey = toDayKey(now);
   const nowMin = minutesOfDay(now);
 
-  const appointments = useMemo(() => {
-    // Reservas feitas no modo cliente com este barbeiro também entram na agenda.
-    const fromApp: BarberAppointment[] = bookings
-      .filter(
-        (b) =>
-          b.barberId === DEMO_BARBER_ID &&
-          b.status === 'scheduled' &&
-          toDayKey(new Date(b.startsAt)) === todayKey,
-      )
-      .map((b) => ({
-        id: b.id,
-        clientName: USER.fullName,
-        serviceIds: b.serviceIds,
-        startMin: minutesOfDay(new Date(b.startsAt)),
-        durationMin: b.totalDuration,
-        price: b.totalPrice,
-        fromApp: true,
-      }));
+  // Folgas, horários especiais e bloqueios de hoje valem também para a agenda.
+  const { hours: todayHours, blocked: todayBlocked } = getDayAvailability(DEMO_BARBER_ID, now);
 
-    return [...getSimulatedAppointments(DEMO_BARBER_ID, new Date(), services), ...fromApp].sort(
-      (a, b) => a.startMin - b.startMin,
-    );
-  }, [bookings, services, todayKey]);
+  // Reservas feitas no modo cliente com este barbeiro também entram na agenda.
+  const fromApp: BarberAppointment[] = bookings
+    .filter(
+      (b) =>
+        b.barberId === DEMO_BARBER_ID &&
+        b.status === 'scheduled' &&
+        toDayKey(new Date(b.startsAt)) === todayKey,
+    )
+    .map((b) => ({
+      id: b.id,
+      clientName: USER.fullName,
+      serviceIds: b.serviceIds,
+      startMin: minutesOfDay(new Date(b.startsAt)),
+      durationMin: b.totalDuration,
+      price: b.totalPrice,
+      fromApp: true,
+    }));
+
+  const appointments = [
+    ...getSimulatedAppointments(DEMO_BARBER_ID, now, services, todayHours, todayBlocked),
+    ...fromApp,
+  ].sort((a, b) => a.startMin - b.startMin);
 
   const revenue = appointments.reduce((sum, a) => sum + a.price, 0);
   const next = appointments.find((a) => getStatus(a, nowMin) !== 'done');

@@ -10,6 +10,7 @@ import { BarberDetailScreen } from '../screens/BarberDetailScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { LegalScreen } from '../screens/LegalScreen';
 import { BarberServicesScreen } from '../screens/BarberServicesScreen';
+import { BarberWorkingHoursScreen } from '../screens/BarberWorkingHoursScreen';
 
 export type { RootStackParamList, TabParamList, BarberTabParamList } from './types';
 
@@ -37,6 +38,11 @@ export function AppRoutes() {
             name="BarberServices"
             component={BarberServicesScreen}
             options={{ title: 'Gerenciar serviços' }}
+          />
+          <Stack.Screen
+            name="BarberWorkingHours"
+            component={BarberWorkingHoursScreen}
+            options={{ title: 'Horários de funcionamento' }}
           />
         </Stack.Group>
       ) : (
