@@ -91,18 +91,8 @@ export const BARBERS: Barber[] = [
   },
 ];
 
+/** Janela de funcionamento de um dia, em minutos desde a meia-noite; `null` = fechado. */
 export type BusinessHours = { open: number; close: number } | null;
-
-/** Horário de funcionamento indexado por `Date.getDay()` (0 = domingo), em horas. */
-export const BUSINESS_HOURS: BusinessHours[] = [
-  null,
-  { open: 9, close: 19 },
-  { open: 9, close: 19 },
-  { open: 9, close: 19 },
-  { open: 9, close: 19 },
-  { open: 9, close: 19 },
-  { open: 9, close: 17 },
-];
 
 export type Shop = {
   id: string;
@@ -174,7 +164,8 @@ export const PORTFOLIO_SAMPLE_IMAGES = [
 export const APP_VERSION = '1.0.0';
 
 export const SLOT_INTERVAL_MIN = 30;
-export const BOOKING_DAYS_AHEAD = 7;
+/** Até quantos dias à frente o cliente pode agendar (um ano). */
+export const BOOKING_WINDOW_DAYS = 365;
 
 export function getBarberById(id: string) {
   return BARBERS.find((barber) => barber.id === id);

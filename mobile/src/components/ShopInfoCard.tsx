@@ -7,9 +7,9 @@ import { getWeeklyHours, isShopOpen } from '../utils/booking';
 import { openShopOnMaps } from '../utils/contact';
 
 export function ShopInfoCard() {
-  const { activeShop } = useSettings();
-  const open = isShopOpen();
-  const rows = getWeeklyHours();
+  const { activeShop, businessHours } = useSettings();
+  const open = isShopOpen(businessHours);
+  const rows = getWeeklyHours(businessHours);
 
   return (
     <View style={styles.card}>

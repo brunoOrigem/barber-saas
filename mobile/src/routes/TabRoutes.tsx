@@ -8,6 +8,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { BookingsScreen } from '../screens/BookingsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { BarberScheduleScreen } from '../screens/BarberScheduleScreen';
+import { BarberCalendarScreen } from '../screens/BarberCalendarScreen';
 import { BarberPortfolioManagerScreen } from '../screens/BarberPortfolioManagerScreen';
 import { BarberProfileSettingsScreen } from '../screens/BarberProfileSettingsScreen';
 
@@ -24,7 +25,8 @@ const ICONS: Record<keyof TabParamList, TabIcon> = {
 };
 
 const BARBER_ICONS: Record<keyof BarberTabParamList, TabIcon> = {
-  BarberSchedule: { active: 'calendar', inactive: 'calendar-outline' },
+  BarberSchedule: { active: 'today', inactive: 'today-outline' },
+  BarberCalendar: { active: 'calendar', inactive: 'calendar-outline' },
   BarberPortfolio: { active: 'camera', inactive: 'camera-outline' },
   BarberProfile: { active: 'person', inactive: 'person-outline' },
 };
@@ -68,6 +70,11 @@ export function BarberTabRoutes() {
         name="BarberSchedule"
         component={BarberScheduleScreen}
         options={{ title: 'Agenda Hoje' }}
+      />
+      <BarberTab.Screen
+        name="BarberCalendar"
+        component={BarberCalendarScreen}
+        options={{ title: 'Calendário' }}
       />
       <BarberTab.Screen
         name="BarberPortfolio"

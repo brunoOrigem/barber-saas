@@ -19,10 +19,11 @@ export function BarberProfileSettingsScreen() {
   const navigation = useNavigation();
   const { posts } = usePortfolio();
   const { activeServices } = useServices();
-  const { activeShop } = useSettings();
+  const { activeShop, workingDays } = useSettings();
 
   const barber = getBarberById(DEMO_BARBER_ID);
   const postsCount = posts.filter((post) => post.barberId === DEMO_BARBER_ID).length;
+  const openDaysCount = workingDays.filter((day) => day.isOpen).length;
 
   return (
     <ScrollView
@@ -62,6 +63,12 @@ export function BarberProfileSettingsScreen() {
           label="Gerenciar serviços"
           value={`${activeServices.length} ${activeServices.length === 1 ? 'serviço ativo' : 'serviços ativos'} · preços e durações`}
           onPress={() => navigation.navigate('BarberServices')}
+        />
+        <SettingsRow
+          icon="time-outline"
+          label="Horários de funcionamento"
+          value={`${openDaysCount} ${openDaysCount === 1 ? 'dia aberto' : 'dias abertos'} por semana`}
+          onPress={() => navigation.navigate('BarberWorkingHours')}
           last
         />
       </SettingsSection>

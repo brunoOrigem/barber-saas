@@ -1,26 +1,32 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { THEME } from '../theme';
-import { BARBERS, Service } from '../data/mock';
+import { BARBERS, BOOKING_WINDOW_DAYS, BusinessHours, Service } from '../data/mock';
 import { RootStackParamList } from '../routes';
 import { BarberCard } from '../components/BarberCard';
 import { ServiceCard } from '../components/ServiceCard';
 import { SelectableChip } from '../components/SelectableChip';
+import { CalendarLegend, MonthCalendar } from '../components/MonthCalendar';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { BookingSummaryModal } from '../components/BookingSummaryModal';
 import { useBookings } from '../contexts/BookingsContext';
 import { useServices } from '../contexts/ServicesContext';
+import { useSettings } from '../contexts/SettingsContext';
+import { useCalendar } from '../contexts/CalendarContext';
 import {
   formatDuration,
   formatPrice,
+  formatLongDate,
+  formatTime,
   getAvailableTimes,
-  getBookingDays,
   minutesOfDay,
+  toBookingDay,
   toDayKey,
 } from '../utils/booking';
+import { addDays, DayAvailability, resolveDayAvailability } from '../utils/calendar';
 import {
   getLockedServiceIds,
   normalizeSelection,
@@ -30,7 +36,10 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'SelectBarber'>;
 
 export function SelectBarberScreen({ route, navigation }: Props) {
-  const days = useMemo(() => getBookingDays(), []);
+  const { businessHours } = useSettings();
+  const { getDayAvailability } = useCalendar();
+  const [today] = useState(() => new Date());
+  const lastDate = addDays(today, BOOKING_WINDOW_DAYS);
   const { upcoming, addBooking } = useBookings();
   const { services, activeServices } = useServices();
 
@@ -42,7 +51,14 @@ export function SelectBarberScreen({ route, navigation }: Props) {
     normalizeSelection(route.params?.serviceIds ?? [], services),
   );
   const [mergedBundle, setMergedBundle] = useState<Service | null>(null);
-  const [dayKey, setDayKey] = useState(() => (days.find((d) => d.hours) ?? days[0]).key);
+  // Começa no primeiro dia aberto da semana; o cliente pode navegar o ano inteiro.
+  const [selectedDate, setSelectedDate] = useState(() => {
+    for (let i = 0; i < 7; i++) {
+      const date = addDays(today, i);
+      if (businessHours[date.getDay()]) return date;
+    }
+    return today;
+  });
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [summaryVisible, setSummaryVisible] = useState(false);
 
@@ -53,16 +69,26 @@ export function SelectBarberScreen({ route, navigation }: Props) {
   const totalDuration = selectedServices.reduce((sum, service) => sum + service.durationMin, 0);
 
   const barber = BARBERS.find((b) => b.id === barberId) ?? null;
-  const day = days.find((d) => d.key === dayKey) ?? days[0];
 
-  const availableTimes = useMemo(() => {
+  // Sem profissional escolhido, vale o horário semanal da barbearia; com ele,
+  // entram também as folgas, horários especiais e bloqueios definidos por data.
+  function availabilityOn(date: Date): DayAvailability {
+    return barberId ? getDayAvailability(barberId, date) : resolveDayAvailability(date, businessHours);
+  }
+
+  const availability = availabilityOn(selectedDate);
+  const day = toBookingDay(selectedDate, availability.hours, today);
+
+  function getAvailableTimesForDay() {
     if (!barberId) return [];
-    // Horários que o cliente já reservou com este barbeiro neste dia ficam bloqueados.
+    // Horários que o cliente já reservou com este barbeiro neste dia ficam bloqueados,
+    // assim como os blocos que o barbeiro bloqueou na data.
     const taken = upcoming
       .filter((b) => b.barberId === barberId && toDayKey(new Date(b.startsAt)) === day.key)
       .map((b) => ({ startMin: minutesOfDay(new Date(b.startsAt)), durationMin: b.totalDuration }));
-    return getAvailableTimes(barberId, day, totalDuration, taken);
-  }, [barberId, day, totalDuration, upcoming]);
+    return getAvailableTimes(barberId, day, totalDuration, [...taken, ...availability.blocked]);
+  }
+  const availableTimes = getAvailableTimesForDay();
 
   // Se o barbeiro, dia ou duração mudarem, um horário que deixou de existir é descartado.
   const time = selectedTime && availableTimes.includes(selectedTime) ? selectedTime : null;
@@ -157,22 +183,22 @@ export function SelectBarberScreen({ route, navigation }: Props) {
         </View>
 
         <Text style={styles.sectionTitle}>Data</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
-        >
-          {days.map((d) => (
-            <SelectableChip
-              key={d.key}
-              label={d.label}
-              sublabel={d.hours ? d.sublabel : 'Fechado'}
-              selected={d.key === dayKey}
-              onPress={() => setDayKey(d.key)}
-              style={styles.dayChip}
-            />
-          ))}
-        </ScrollView>
+        <View style={styles.section}>
+          <MonthCalendar
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            minDate={today}
+            maxDate={lastDate}
+            isDateDisabled={(date) => !availabilityOn(date).hours}
+            getMarker={(date) => (availabilityOn(date).rule?.mode === 'custom' ? 'special' : undefined)}
+          />
+          <CalendarLegend items={[{ marker: 'special', label: 'Horário especial do profissional' }]} />
+          <Text style={styles.selectedDate}>
+            {formatLongDate(selectedDate)}
+            {selectedDate.getFullYear() !== today.getFullYear() ? ` de ${selectedDate.getFullYear()}` : ''}
+            {availability.hours ? ` · ${describeHours(availability.hours)}` : ''}
+          </Text>
+        </View>
 
         <Text style={styles.sectionTitle}>Horários disponíveis</Text>
         <View style={styles.section}>
@@ -181,7 +207,11 @@ export function SelectBarberScreen({ route, navigation }: Props) {
           ) : selectedServices.length === 0 ? (
             <Text style={styles.emptyText}>Selecione ao menos um serviço.</Text>
           ) : !day.hours ? (
-            <Text style={styles.emptyText}>A barbearia está fechada neste dia.</Text>
+            <Text style={styles.emptyText}>
+              {availability.rule?.mode === 'dayOff'
+                ? `${barber?.name ?? 'O profissional'} está de folga neste dia.`
+                : 'A barbearia está fechada neste dia.'}
+            </Text>
           ) : availableTimes.length === 0 ? (
             <Text style={styles.emptyText}>Sem horários disponíveis neste dia.</Text>
           ) : (
@@ -228,6 +258,10 @@ export function SelectBarberScreen({ route, navigation }: Props) {
       )}
     </View>
   );
+}
+
+function describeHours(hours: NonNullable<BusinessHours>) {
+  return `${formatTime(hours.open)} – ${formatTime(hours.close)}`;
 }
 
 function MergeNotice({
@@ -317,9 +351,10 @@ const styles = StyleSheet.create({
     fontSize: THEME.FONT_SIZE.MD,
     fontWeight: 'bold',
   },
-  dayChip: {
-    marginRight: THEME.SPACING.SM,
-    minWidth: THEME.SPACING.XL * 2,
+  selectedDate: {
+    color: THEME.COLORS.TEXT_SECONDARY,
+    fontSize: THEME.FONT_SIZE.SM,
+    marginTop: THEME.SPACING.MD,
   },
   timeGrid: {
     flexDirection: 'row',
